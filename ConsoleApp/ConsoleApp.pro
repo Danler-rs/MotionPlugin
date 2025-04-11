@@ -1,4 +1,4 @@
-QT = core gui qml
+QT = core gui qml quick quick3d
 
 CONFIG += c++17 cmdline
 

@@ -1,4 +1,4 @@
-QT += gui qml quick
+QT += gui qml quick quick3d
 
 TEMPLATE = lib
 CONFIG += plugin

@@ -402,14 +402,34 @@ Makefile: ..\..\..\ConsoleApp\ConsoleApp.pro C:\Qt\6.9.0\msvc2022_64\mkspecs\win
 		C:\Qt\6.9.0\msvc2022_64\mkspecs\features\yacc.prf \
 		C:\Qt\6.9.0\msvc2022_64\mkspecs\features\lex.prf \
 		..\..\..\ConsoleApp\ConsoleApp.pro \
+		C:\Qt\6.9.0\msvc2022_64\lib\Qt6Quick3D.prl \
+		C:\Qt\6.9.0\msvc2022_64\lib\Qt6Quick3DRuntimeRender.prl \
+		C:\Qt\6.9.0\msvc2022_64\lib\Qt6Quick.prl \
+		C:\Qt\6.9.0\msvc2022_64\lib\Qt6OpenGL.prl \
+		C:\Qt\6.9.0\msvc2022_64\lib\Qt6Quick3DUtils.prl \
+		C:\Qt\6.9.0\msvc2022_64\lib\Qt6ShaderTools.prl \
 		C:\Qt\6.9.0\msvc2022_64\lib\Qt6Gui.prl \
+		C:\Qt\6.9.0\msvc2022_64\lib\Qt6QmlMeta.prl \
+		C:\Qt\6.9.0\msvc2022_64\lib\Qt6QmlModels.prl \
+		C:\Qt\6.9.0\msvc2022_64\lib\Qt6QmlWorkerScript.prl \
 		C:\Qt\6.9.0\msvc2022_64\lib\Qt6Qml.prl \
 		C:\Qt\6.9.0\msvc2022_64\lib\Qt6Network.prl \
+		C:\Qt\6.9.0\msvc2022_64\lib\Qt6Concurrent.prl \
 		C:\Qt\6.9.0\msvc2022_64\lib\Qt6Core.prl \
 		C:\Qt\6.9.0\msvc2022_64\mkspecs\features\build_pass.prf \
+		C:\Qt\6.9.0\msvc2022_64\lib\Qt6Quick3Dd.prl \
+		C:\Qt\6.9.0\msvc2022_64\lib\Qt6Quick3DRuntimeRenderd.prl \
+		C:\Qt\6.9.0\msvc2022_64\lib\Qt6Quickd.prl \
+		C:\Qt\6.9.0\msvc2022_64\lib\Qt6OpenGLd.prl \
+		C:\Qt\6.9.0\msvc2022_64\lib\Qt6Quick3DUtilsd.prl \
+		C:\Qt\6.9.0\msvc2022_64\lib\Qt6ShaderToolsd.prl \
 		C:\Qt\6.9.0\msvc2022_64\lib\Qt6Guid.prl \
+		C:\Qt\6.9.0\msvc2022_64\lib\Qt6QmlMetad.prl \
+		C:\Qt\6.9.0\msvc2022_64\lib\Qt6QmlModelsd.prl \
+		C:\Qt\6.9.0\msvc2022_64\lib\Qt6QmlWorkerScriptd.prl \
 		C:\Qt\6.9.0\msvc2022_64\lib\Qt6Qmld.prl \
 		C:\Qt\6.9.0\msvc2022_64\lib\Qt6Networkd.prl \
+		C:\Qt\6.9.0\msvc2022_64\lib\Qt6Concurrentd.prl \
 		C:\Qt\6.9.0\msvc2022_64\lib\Qt6Cored.prl
 	$(QMAKE) -o Makefile ..\..\..\ConsoleApp\ConsoleApp.pro -spec win32-msvc "CONFIG+=debug" "CONFIG+=qml_debug"
 C:\Qt\6.9.0\msvc2022_64\mkspecs\features\spec_pre.prf:
@@ -730,14 +750,34 @@ C:\Qt\6.9.0\msvc2022_64\mkspecs\features\exceptions.prf:
 C:\Qt\6.9.0\msvc2022_64\mkspecs\features\yacc.prf:
 C:\Qt\6.9.0\msvc2022_64\mkspecs\features\lex.prf:
 ..\..\..\ConsoleApp\ConsoleApp.pro:
+C:\Qt\6.9.0\msvc2022_64\lib\Qt6Quick3D.prl:
+C:\Qt\6.9.0\msvc2022_64\lib\Qt6Quick3DRuntimeRender.prl:
+C:\Qt\6.9.0\msvc2022_64\lib\Qt6Quick.prl:
+C:\Qt\6.9.0\msvc2022_64\lib\Qt6OpenGL.prl:
+C:\Qt\6.9.0\msvc2022_64\lib\Qt6Quick3DUtils.prl:
+C:\Qt\6.9.0\msvc2022_64\lib\Qt6ShaderTools.prl:
 C:\Qt\6.9.0\msvc2022_64\lib\Qt6Gui.prl:
+C:\Qt\6.9.0\msvc2022_64\lib\Qt6QmlMeta.prl:
+C:\Qt\6.9.0\msvc2022_64\lib\Qt6QmlModels.prl:
+C:\Qt\6.9.0\msvc2022_64\lib\Qt6QmlWorkerScript.prl:
 C:\Qt\6.9.0\msvc2022_64\lib\Qt6Qml.prl:
 C:\Qt\6.9.0\msvc2022_64\lib\Qt6Network.prl:
+C:\Qt\6.9.0\msvc2022_64\lib\Qt6Concurrent.prl:
 C:\Qt\6.9.0\msvc2022_64\lib\Qt6Core.prl:
 C:\Qt\6.9.0\msvc2022_64\mkspecs\features\build_pass.prf:
+C:\Qt\6.9.0\msvc2022_64\lib\Qt6Quick3Dd.prl:
+C:\Qt\6.9.0\msvc2022_64\lib\Qt6Quick3DRuntimeRenderd.prl:
+C:\Qt\6.9.0\msvc2022_64\lib\Qt6Quickd.prl:
+C:\Qt\6.9.0\msvc2022_64\lib\Qt6OpenGLd.prl:
+C:\Qt\6.9.0\msvc2022_64\lib\Qt6Quick3DUtilsd.prl:
+C:\Qt\6.9.0\msvc2022_64\lib\Qt6ShaderToolsd.prl:
 C:\Qt\6.9.0\msvc2022_64\lib\Qt6Guid.prl:
+C:\Qt\6.9.0\msvc2022_64\lib\Qt6QmlMetad.prl:
+C:\Qt\6.9.0\msvc2022_64\lib\Qt6QmlModelsd.prl:
+C:\Qt\6.9.0\msvc2022_64\lib\Qt6QmlWorkerScriptd.prl:
 C:\Qt\6.9.0\msvc2022_64\lib\Qt6Qmld.prl:
 C:\Qt\6.9.0\msvc2022_64\lib\Qt6Networkd.prl:
+C:\Qt\6.9.0\msvc2022_64\lib\Qt6Concurrentd.prl:
 C:\Qt\6.9.0\msvc2022_64\lib\Qt6Cored.prl:
 qmake: FORCE
 	@$(QMAKE) -o Makefile ..\..\..\ConsoleApp\ConsoleApp.pro -spec win32-msvc "CONFIG+=debug" "CONFIG+=qml_debug"
