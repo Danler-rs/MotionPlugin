@@ -15,93 +15,34 @@ Window {
     flags: Qt.Window | Qt.WindowSystemMenuHint | Qt.WindowTitleHint |
                Qt.WindowMinMaxButtonsHint | Qt.WindowCloseButtonHint | Qt.WindowFullscreenButtonHint
 
-    Rectangle {
-            id: controlPanel
-            anchors {
-                top: parent.top
-                left: parent.left
-                right: parent.right
-            }
-            height: 50
-            color: "#80000000"
-            z: 10 // Панель поверх всего
+    // Создаем отдельный объект для управления сеткой
+    GridManager {
+        id: gridManager
+    }
 
-            RowLayout {
-                anchors {
-                    fill: parent
-                    margins: 5
-                }
-                spacing: 10
+    CameraHelper {
+        id: cameraHelper
+        orbitCameraNode: orbitCameraNode
+        orbitCamera: orbitCamera
+        wasdCamera: wasdCamera
+        wasdController: wasdController
+    }
 
-                Button {
-                    id: orbitButton
-                    text: "Режим Orbit"
-                    Layout.preferredWidth: 120
-                    background: Rectangle {
-                        color: helper.orbitControllerEnabled ? "#007acc" : "#444444"
-                        radius: 4
-                    }
-                    contentItem: Text {
-                        text: orbitButton.text
-                        color: "white"
-                        horizontalAlignment: Text.AlignHCenter
-                        verticalAlignment: Text.AlignVCenter
-                    }
-                    onClicked: helper.switchController(true)
-                    ToolTip.visible: hovered
-                    ToolTip.text: "Переключиться на режим Orbit камеры"
-                }
-
-                Button {
-                    id: wasdButton
-                    text: "Режим WASD"
-                    Layout.preferredWidth: 120
-                    background: Rectangle {
-                        color: !helper.orbitControllerEnabled ? "#007acc" : "#444444"
-                        radius: 4
-                    }
-                    contentItem: Text {
-                        text: wasdButton.text
-                        color: "white"
-                        horizontalAlignment: Text.AlignHCenter
-                        verticalAlignment: Text.AlignVCenter
-                    }
-                    onClicked: helper.switchController(false)
-                    ToolTip.visible: hovered
-                    ToolTip.text: "Переключиться на режим WASD камеры"
-                }
-
-                Button {
-                    text: "Сброс вида"
-                    Layout.preferredWidth: 120
-                    onClicked: helper.resetView()
-                    ToolTip.visible: hovered
-                    ToolTip.text: "Сбросить положение камеры"
-                }
-
-                Button {
-                    id: gridButton
-                    property bool gridState: helper.gridEnabled
-                    text: gridState ? "Скрыть сетку" : "Показать сетку"
-                    Layout.preferredWidth: 120
-                    onClicked: {
-                        helper.gridEnabled = !helper.gridEnabled
-                        gridState = helper.gridEnabled // Обновляем локальное свойство для обновления текста
-                    }
-                    ToolTip.visible: hovered
-                    ToolTip.text: "Показать/скрыть вспомогательную сетку"
-                }
-
-                Item { Layout.fillWidth: true } // Расширитель
-
-                Label {
-                    text: helper.orbitControllerEnabled ? "Текущий режим: Orbit" : "Текущий режим: WASD"
-                    color: "white"
-                    font.pixelSize: 14
-                    Layout.alignment: Qt.AlignRight
-                }
-            }
+    ControlPanelUI {
+        id: controlPanel
+        anchors {
+            top: parent.top
+            left: parent.left
+            right: parent.right
         }
+        cameraHelper: cameraHelper
+        gridManager: gridManager
+
+        onOrbitModeRequested: cameraHelper.switchController(true)
+        onWasdModeRequested: cameraHelper.switchController(false)
+        onResetViewRequested: cameraHelper.resetView()
+        onToggleGridRequested: gridManager.toggleGrid()
+    }
 
     View3D {
         id: view3D
@@ -110,7 +51,7 @@ Window {
             clearColor: "#404040"
             backgroundMode: SceneEnvironment.Color
             InfiniteGrid {
-                visible: helper.gridEnabled
+                visible: gridManager.gridEnabled
                 gridInterval: 100
             }
             antialiasingMode: SceneEnvironment.MSAA
@@ -118,7 +59,7 @@ Window {
 
         }
 
-        camera: helper.orbitControllerEnabled ? orbitCamera : wasdCamera
+        camera: cameraHelper.orbitControllerEnabled ? orbitCamera : wasdCamera
 
         Node {
             id: orbitCameraNode
@@ -244,56 +185,19 @@ Window {
         anchors.fill: parent
         origin: orbitCameraNode
         camera: orbitCamera
-        enabled: helper.orbitControllerEnabled
+        enabled: cameraHelper.orbitControllerEnabled
     }
 
     WasdController {
         id: wasdController
         anchors.fill: parent
         controlledObject: wasdCamera
-        enabled: !helper.orbitControllerEnabled
+        enabled: !cameraHelper.orbitControllerEnabled
         speed: 5.0
         shiftSpeed: 15.0
     }
 
-    QtObject {
-            id: helper
-            property bool orbitControllerEnabled: true
-            property bool gridEnabled: true
-            property vector3d boundsCenter: Qt.vector3d(0, 0, 0)
-            property real boundsDiameter: 200
-
-            function switchController(useOrbitController) {
-                if (useOrbitController) {
-                    let wasdOffset = wasdCamera.position.minus(boundsCenter)
-                    let wasdDistance = wasdOffset.length()
-                    let wasdDistanceInPlane = Qt.vector3d(wasdOffset.x, 0, wasdOffset.z).length()
-                    let yAngle = Math.atan2(wasdOffset.x, wasdOffset.z) * 180 / Math.PI
-                    let xAngle = -Math.atan2(wasdOffset.y, wasdDistanceInPlane) * 180 / Math.PI
-
-                    orbitCameraNode.position = boundsCenter
-                    orbitCameraNode.eulerRotation = Qt.vector3d(xAngle, yAngle, 0)
-                    orbitCamera.position = Qt.vector3d(0, 0, wasdDistance)
-                    orbitCamera.eulerRotation = Qt.vector3d(0, 0, 0)
-                } else {
-                    wasdCamera.position = orbitCamera.scenePosition
-                    wasdCamera.rotation = orbitCamera.sceneRotation
-                    wasdController.focus = true
-                }
-                orbitControllerEnabled = useOrbitController
-
-            }
-
-            function resetView() {
-                orbitCameraNode.eulerRotation = Qt.vector3d(-15, 0, 0)
-                orbitCameraNode.position = boundsCenter
-                orbitCamera.position = Qt.vector3d(0, 0, 400)
-                orbitCamera.eulerRotation = Qt.vector3d(0, 0, 0)
-                orbitControllerEnabled = true
-            }
-        }
-
-    Rectangle {
+    InfoPanel {
         id: controlsInfo
         anchors {
             left: parent.left
@@ -302,24 +206,10 @@ Window {
             margins: 10
         }
         height: 40
-        color: "#80000000"
-        radius: 5
-
-        Column {
-            anchors.centerIn: parent
-            spacing: 5
-
-            Text {
-                anchors.horizontalCenter: parent.horizontalCenter
-                text: "Motion Plugin"
-                font.pixelSize: 20
-                color: "white"
-            }
-        }
+        applicationTitle: "Motion Plugin"
     }
 
     Component.onCompleted: {
-        helper.resetView()
+        cameraHelper.resetView()
     }
-
 }
