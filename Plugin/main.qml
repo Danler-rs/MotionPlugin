@@ -105,79 +105,6 @@ Window {
             shadowMapQuality: Light.ShadowMapQualityHigh
         }
 
-        Model {
-            id: cubeModel
-            source: "#Cube"
-            scale: Qt.vector3d(1.5, 1.5, 1.5)
-            eulerRotation.y: 45
-            materials: [
-                DefaultMaterial {
-                    diffuseColor: "#4080ff"
-                    specularAmount: 0.5
-                }
-            ]
-
-            SequentialAnimation on eulerRotation {
-                loops: Animation.Infinite
-                PropertyAnimation {
-                    duration: 5000
-                    from: Qt.vector3d(0, 0, 0)
-                    to: Qt.vector3d(360, 360, 0)
-                }
-            }
-        }
-
-        Model {
-            id: sphereModel
-            source: "#Sphere"
-            scale: Qt.vector3d(1.2, 1.2, 1.2)
-            position: Qt.vector3d(100, 0, 0)
-            materials: [
-                DefaultMaterial {
-                    diffuseColor: "#ff4040"
-                    specularAmount: 0.7
-                }
-            ]
-
-            SequentialAnimation on position.y {
-                loops: Animation.Infinite
-                PropertyAnimation {
-                    duration: 2000
-                    from: 0
-                    to: 50
-                    easing.type: Easing.InOutQuad
-                }
-                PropertyAnimation {
-                    duration: 2000
-                    from: 50
-                    to: 0
-                    easing.type: Easing.InOutQuad
-                }
-            }
-        }
-
-        Model {
-            id: cylinderModel
-            source: "#Cylinder"
-            position: Qt.vector3d(0, 0, -100)
-            scale: Qt.vector3d(1.0, 2.0, 1.0)
-            materials: [
-                DefaultMaterial {
-                    diffuseColor: "#40ff40"
-                    specularAmount: 0.5
-                }
-            ]
-
-            SequentialAnimation on eulerRotation.x {
-                loops: Animation.Infinite
-                PropertyAnimation {
-                    duration: 3000
-                    from: 0
-                    to: 360
-                }
-            }
-        }
-
     }
 
     OrbitCameraController {
@@ -195,18 +122,6 @@ Window {
         enabled: !cameraHelper.orbitControllerEnabled
         speed: 5.0
         shiftSpeed: 15.0
-    }
-
-    InfoPanel {
-        id: controlsInfo
-        anchors {
-            left: parent.left
-            right: parent.right
-            bottom: parent.bottom
-            margins: 10
-        }
-        height: 40
-        applicationTitle: "Motion Plugin"
     }
 
     Component.onCompleted: {

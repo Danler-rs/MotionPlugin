@@ -4,6 +4,5 @@
         <file>CameraHelper.qml</file>
         <file>GridManager.qml</file>
         <file>ControlPanelUI.qml</file>
-        <file>InfoPanel.qml</file>
     </qresource>
 </RCC>
