@@ -29,7 +29,6 @@ DISTFILES += Plugin.json \
     CameraHelper.qml \
     ControlPanelUI.qml \
     GridManager.qml \
-    InfoPanel.qml \
     main.qml
 
 INCLUDEPATH += ../common
