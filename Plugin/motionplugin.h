@@ -7,6 +7,7 @@
 #include <QUrl>
 #include <QtQml/QQmlContext>
 #include "pluginInterface.h"
+#include "modelimporter.h"
 
 class MotionPlugin : public QObject, public PluginInterface
 {
@@ -24,6 +25,7 @@ public:
 
 private:
     QQmlApplicationEngine *m_engine;
+    ModelImporter *m_modelImporter = nullptr;
 
 };
 

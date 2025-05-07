@@ -19,9 +19,11 @@ CONFIG(debug, debug|release) {
 
 
 SOURCES += \
+    modelimporter.cpp \
     motionplugin.cpp
 
 HEADERS += \
+    modelimporter.h \
     motionplugin.h \
     ../common/pluginInterface.h
 
@@ -29,6 +31,7 @@ DISTFILES += Plugin.json \
     CameraHelper.qml \
     ControlPanelUI.qml \
     GridManager.qml \
+    Model3D.qml \
     main.qml
 
 INCLUDEPATH += ../common

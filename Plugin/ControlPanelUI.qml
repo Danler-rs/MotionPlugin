@@ -1,6 +1,8 @@
+//ControlPanelUI
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
+import MotionPlugin 1.0
 
 Rectangle {
     id: root
@@ -8,6 +10,7 @@ Rectangle {
     // Публичные свойства
     property var cameraHelper
     property var gridManager
+    property var modelHandler
 
     color: "#80000000"
     height: 50
@@ -18,6 +21,7 @@ Rectangle {
     signal wasdModeRequested()
     signal resetViewRequested()
     signal toggleGridRequested()
+    signal loadModelRequested()
 
     RowLayout {
         anchors {
@@ -84,6 +88,26 @@ Rectangle {
             ToolTip.visible: hovered
             ToolTip.text: "Показать/скрыть вспомогательную сетку"
         }
+
+        Button {
+                    id: loadModelButton
+                    text: "Загрузить модель"
+                    Layout.preferredWidth: 130
+                    onClicked: loadModelRequested()
+                    ToolTip.visible: hovered
+                    ToolTip.text: "Загрузить 3D модель"
+                    background: Rectangle {
+                        color: "#007acc"
+                        radius: 4
+                    }
+                    contentItem: Text {
+                        text: loadModelButton.text
+                        color: "white"
+                        horizontalAlignment: Text.AlignHCenter
+                        verticalAlignment: Text.AlignVCenter
+                    }
+                }
+
 
         Item { Layout.fillWidth: true } // Расширитель
 
