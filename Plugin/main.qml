@@ -3,9 +3,14 @@ import QtQuick.Window
 import QtQuick.Controls
 import QtQuick.Layouts
 import QtQuick3D
+import QtQuick.Dialogs
 import QtQuick3D.Helpers
+import QtQuick3D.AssetUtils
+import Qt.labs.platform
+import QtCore
 
 Window {
+    id: windowRoot
     width: 1200
     height: 800
     visible: true
@@ -15,9 +20,12 @@ Window {
     flags: Qt.Window | Qt.WindowSystemMenuHint | Qt.WindowTitleHint |
                Qt.WindowMinMaxButtonsHint | Qt.WindowCloseButtonHint | Qt.WindowFullscreenButtonHint
 
-    // Создаем отдельный объект для управления сеткой
+    property url importUrl;
+
     GridManager {
         id: gridManager
+        cameraHelper: cameraHelper
+
     }
 
     CameraHelper {
@@ -26,6 +34,7 @@ Window {
         orbitCamera: orbitCamera
         wasdCamera: wasdCamera
         wasdController: wasdController
+        view3d: view3D
     }
 
     ControlPanelUI {
@@ -42,6 +51,7 @@ Window {
         onWasdModeRequested: cameraHelper.switchController(false)
         onResetViewRequested: cameraHelper.resetView()
         onToggleGridRequested: gridManager.toggleGrid()
+        onImportModelRequested: fileDialog.open()
     }
 
     View3D {
@@ -52,11 +62,16 @@ Window {
             backgroundMode: SceneEnvironment.Color
             InfiniteGrid {
                 visible: gridManager.gridEnabled
-                gridInterval: 100
+                gridInterval: gridManager.gridInterval
             }
             antialiasingMode: SceneEnvironment.MSAA
             antialiasingQuality: SceneEnvironment.High
+        }
 
+        RuntimeLoader {
+            id: importNode
+            source: windowRoot.importUrl
+            onBoundsChanged: cameraHelper.updateBounds(bounds)
         }
 
         camera: cameraHelper.orbitControllerEnabled ? orbitCamera : wasdCamera
@@ -97,14 +112,54 @@ Window {
 
         DirectionalLight {
             id: directionalLight
-            color: Qt.rgba(0.8, 0.8, 0.8, 1.0)
-            ambientColor: Qt.rgba(0.1, 0.1, 0.1, 1.0)
-            position: Qt.vector3d(0, 200, 0)
-            rotation: Qt.quaternion(0.707, 0.707, 0, 0)
+            eulerRotation.x: -35
+            eulerRotation.y: -90
+
             castsShadow: true
-            shadowMapQuality: Light.ShadowMapQualityHigh
         }
 
+        Model {
+            parent: importNode
+
+            opacity: 0.2
+            visible: importNode.status === RuntimeLoader.Success
+            position: cameraHelper.boundsCenter
+            scale: Qt.vector3d(cameraHelper.boundsSize.x / 100,
+                               cameraHelper.boundsSize.y / 100,
+                               cameraHelper.boundsSize.z / 100)
+        }
+
+        Rectangle {
+            id: messageBox
+            visible: importNode.status !== RuntimeLoader.Success
+            color: "red"
+            width: parent.width * 0.8
+            height: parent.height * 0.8
+            anchors.centerIn: parent
+            radius: Math.min(width, height) / 10
+            opacity: 0.6
+            Text {
+                anchors.fill: parent
+                font.pixelSize: 36
+                text: "Status: " + importNode.errorString + "\nPress \"Import...\" to import a model"
+                color: "white"
+                wrapMode: Text.Wrap
+                horizontalAlignment: Text.AlignHCenter
+                verticalAlignment: Text.AlignVCenter
+            }
+        }
+
+    }
+
+    FileDialog {
+        id: fileDialog
+        nameFilters: ["glTF files (*.gltf *.glb)", "All files (*)"]
+        onAccepted: importUrl = file
+        Settings {
+            id: fileDialogSettings
+            category: "QtQuick3D.Examples.RuntimeLoader"
+            property alias folder: fileDialog.folder
+        }
     }
 
     OrbitCameraController {

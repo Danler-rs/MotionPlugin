@@ -1,6 +1,13 @@
 import QtQuick
+import QtQuick.Window
 import QtQuick.Controls
 import QtQuick.Layouts
+import QtQuick3D
+import QtQuick.Dialogs
+import QtQuick3D.Helpers
+import QtQuick3D.AssetUtils
+import Qt.labs.platform
+import QtCore
 
 Rectangle {
     id: root
@@ -18,6 +25,7 @@ Rectangle {
     signal wasdModeRequested()
     signal resetViewRequested()
     signal toggleGridRequested()
+    signal importModelRequested()
 
     RowLayout {
         anchors {
@@ -83,6 +91,12 @@ Rectangle {
             }
             ToolTip.visible: hovered
             ToolTip.text: "Показать/скрыть вспомогательную сетку"
+        }
+
+        Button {
+            text: "Загрузить модель"
+            Layout.preferredWidth: 120
+            onClicked: importModelRequested()
         }
 
         Item { Layout.fillWidth: true } // Расширитель
