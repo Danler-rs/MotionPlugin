@@ -1,19 +1,45 @@
 import QtQuick
+import QtQuick.Window
+import QtQuick.Controls
+import QtQuick.Layouts
 import QtQuick3D
+import QtQuick.Dialogs
+import QtQuick3D.Helpers
+import QtQuick3D.AssetUtils
+import Qt.labs.platform
+import QtCore
 
 QtObject {
     id: root
 
     // Публичные свойства
     property bool orbitControllerEnabled: true
-    property vector3d boundsCenter: Qt.vector3d(0, 0, 0)
-    property real boundsDiameter: 200
+    property vector3d boundsCenter
+    property vector3d boundsSize
+    property real boundsDiameter: 0
 
     // Внешние ссылки на объекты сцены - нужно будет установить из основного файла
     property Node orbitCameraNode
     property PerspectiveCamera orbitCamera
     property PerspectiveCamera wasdCamera
     property Item wasdController
+    property View3D view3d
+
+    function updateBounds(bounds) {
+        boundsSize = Qt.vector3d(bounds.maximum.x - bounds.minimum.x,
+                                 bounds.maximum.y - bounds.minimum.y,
+                                 bounds.maximum.z - bounds.minimum.z)
+        boundsDiameter = Math.max(boundsSize.x, boundsSize.y, boundsSize.z)
+        boundsCenter = Qt.vector3d((bounds.maximum.x + bounds.minimum.x) / 2,
+                                   (bounds.maximum.y + bounds.minimum.y) / 2,
+                                   (bounds.maximum.z + bounds.minimum.z) / 2 )
+
+        wasdController.speed = boundsDiameter / 1000.0
+        wasdController.shiftSpeed = 3 * wasdController.speed
+        wasdCamera.clipNear = boundsDiameter / 100
+        wasdCamera.clipFar = boundsDiameter * 10
+        view3D.resetView()
+    }
 
     function switchController(useOrbitController) {
         if (useOrbitController) {
