@@ -20,8 +20,6 @@ Window {
     flags: Qt.Window | Qt.WindowSystemMenuHint | Qt.WindowTitleHint |
                Qt.WindowMinMaxButtonsHint | Qt.WindowCloseButtonHint | Qt.WindowFullscreenButtonHint
 
-    property url importUrl;
-
     GridManager {
         id: gridManager
         cameraHelper: cameraHelper
@@ -35,6 +33,13 @@ Window {
         wasdCamera: wasdCamera
         wasdController: wasdController
         view3d: view3D
+    }
+
+    // Менеджер моделей
+    ModelManager {
+        id: modelManager
+        parentNode: modelsNode
+        cameraHelper: cameraHelper
     }
 
     ControlPanelUI {
@@ -51,7 +56,16 @@ Window {
         onWasdModeRequested: cameraHelper.switchController(false)
         onResetViewRequested: cameraHelper.resetView()
         onToggleGridRequested: gridManager.toggleGrid()
-        onImportModelRequested: fileDialog.open()
+    }
+
+    ModelsListPanel {
+        id: modelsListPanel
+        anchors {
+            top: controlPanel.bottom
+            bottom: parent.bottom
+            left: parent.left
+        }
+        modelManager: modelManager
     }
 
     View3D {
@@ -66,12 +80,6 @@ Window {
             }
             antialiasingMode: SceneEnvironment.MSAA
             antialiasingQuality: SceneEnvironment.High
-        }
-
-        RuntimeLoader {
-            id: importNode
-            source: windowRoot.importUrl
-            onBoundsChanged: cameraHelper.updateBounds(bounds)
         }
 
         camera: cameraHelper.orbitControllerEnabled ? orbitCamera : wasdCamera
@@ -118,47 +126,8 @@ Window {
             castsShadow: true
         }
 
-        Model {
-            parent: importNode
-
-            opacity: 0.2
-            visible: importNode.status === RuntimeLoader.Success
-            position: cameraHelper.boundsCenter
-            scale: Qt.vector3d(cameraHelper.boundsSize.x / 100,
-                               cameraHelper.boundsSize.y / 100,
-                               cameraHelper.boundsSize.z / 100)
-        }
-
-        Rectangle {
-            id: messageBox
-            visible: importNode.status !== RuntimeLoader.Success
-            color: "red"
-            width: parent.width * 0.8
-            height: parent.height * 0.8
-            anchors.centerIn: parent
-            radius: Math.min(width, height) / 10
-            opacity: 0.6
-            Text {
-                anchors.fill: parent
-                font.pixelSize: 36
-                text: "Status: " + importNode.errorString + "\nPress \"Import...\" to import a model"
-                color: "white"
-                wrapMode: Text.Wrap
-                horizontalAlignment: Text.AlignHCenter
-                verticalAlignment: Text.AlignVCenter
-            }
-        }
-
-    }
-
-    FileDialog {
-        id: fileDialog
-        nameFilters: ["glTF files (*.gltf *.glb)", "All files (*)"]
-        onAccepted: importUrl = file
-        Settings {
-            id: fileDialogSettings
-            category: "QtQuick3D.Examples.RuntimeLoader"
-            property alias folder: fileDialog.folder
+        Node {
+            id: modelsNode
         }
     }
 
