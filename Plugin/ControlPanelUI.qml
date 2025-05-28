@@ -26,6 +26,7 @@ Rectangle {
     signal resetViewRequested()
     signal toggleGridRequested()
     signal importModelRequested()
+    signal toggleSkeletonRequested()
 
     RowLayout {
         anchors {
@@ -97,6 +98,11 @@ Rectangle {
             text: "Загрузить модель"
             Layout.preferredWidth: 120
             onClicked: importModelRequested()
+        }
+
+        Button {
+            text: "Skeleton Analysis"
+            onClicked: toggleSkeletonRequested()
         }
 
         Item { Layout.fillWidth: true } // Расширитель
