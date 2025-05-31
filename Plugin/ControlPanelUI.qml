@@ -25,6 +25,8 @@ Rectangle {
     signal wasdModeRequested()
     signal resetViewRequested()
     signal toggleGridRequested()
+    signal importModelRequested()
+    signal toggleSkeletonRequested()
 
     RowLayout {
         anchors {
@@ -90,6 +92,17 @@ Rectangle {
             }
             ToolTip.visible: hovered
             ToolTip.text: "Показать/скрыть вспомогательную сетку"
+        }
+
+        Button {
+            text: "Загрузить модель"
+            Layout.preferredWidth: 120
+            onClicked: importModelRequested()
+        }
+
+        Button {
+            text: "Skeleton Analysis"
+            onClicked: toggleSkeletonRequested()
         }
 
         Item { Layout.fillWidth: true } // Расширитель
