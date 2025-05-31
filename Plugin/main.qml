@@ -432,13 +432,6 @@ Window {
         view3d: view3D
     }
 
-    // Менеджер моделей
-    ModelManager {
-        id: modelManager
-        parentNode: modelsNode
-        cameraHelper: cameraHelper
-    }
-
     ControlPanelUI {
         id: controlPanel
         anchors {
