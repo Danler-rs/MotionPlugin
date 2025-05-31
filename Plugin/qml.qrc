@@ -4,5 +4,8 @@
         <file>CameraHelper.qml</file>
         <file>GridManager.qml</file>
         <file>ControlPanelUI.qml</file>
+        <file>ModelContainer.qml</file>
+        <file>ModelManager.qml</file>
+        <file>ModelsListPanel.qml</file>
     </qresource>
 </RCC>

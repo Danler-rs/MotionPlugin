@@ -432,6 +432,13 @@ Window {
         view3d: view3D
     }
 
+    // Менеджер моделей
+    ModelManager {
+        id: modelManager
+        parentNode: modelsNode
+        cameraHelper: cameraHelper
+    }
+
     ControlPanelUI {
         id: controlPanel
         anchors {
@@ -463,7 +470,7 @@ Window {
             antialiasingMode: SceneEnvironment.MSAA
             antialiasingQuality: SceneEnvironment.High
         }
-
+        
         RuntimeLoader {
             id: importNode
             source: windowRoot.importUrl
@@ -831,7 +838,7 @@ Window {
                 console.log("=== END ENHANCED EXPORT ===")
             }
         }
-
+        
         camera: cameraHelper.orbitControllerEnabled ? orbitCamera : wasdCamera
 
         Node {
@@ -913,7 +920,7 @@ Window {
         Settings {
             id: fileDialogSettings
             category: "QtQuick3D.Examples.RuntimeLoader"
-            property alias folder: fileDialog.folder
+            property alias folder: fileDialog.folder  
         }
     }
 
