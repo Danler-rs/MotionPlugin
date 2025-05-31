@@ -39,6 +39,7 @@ Window {
             anchors.fill: parent
             anchors.margins: 15
             clip: true
+            bottomPadding: 30
 
             Column {
                 spacing: 15
@@ -474,7 +475,7 @@ Window {
             }
         }
 
-        // Улучшенный анализатор скелета с правильной привязкой данных
+        // Улучшенный анализатор скелета с правильным отображением названий из .glb файла
         QtObject {
             id: skeletonAnalyzer
 
@@ -490,7 +491,7 @@ Window {
             property var _internalSkeletonData: []
 
             function analyzeSkeleton(modelNode) {
-                console.log("=== 🦴 SKELETON ANALYSIS STARTED ===")
+                console.log("=== 🦴 ENHANCED SKELETON ANALYSIS STARTED ===")
 
                 // Сброс данных
                 _internalSkeletonData = []
@@ -504,16 +505,16 @@ Window {
                 if (modelNode && modelNode.status === RuntimeLoader.Success) {
                     modelInfo = {
                         "Status": "✅ Success",
-                        "Source": modelNode.source.toString().split('/').pop(),
+                        "Source": extractFileName(modelNode.source.toString()),
                         "Full Path": modelNode.source.toString(),
-                        "Bounds": modelNode.bounds ? modelNode.bounds.toString() : "N/A",
+                        "Bounds": modelNode.bounds ? formatBounds(modelNode.bounds) : "N/A",
                         "Analysis Time": new Date().toLocaleTimeString()
                     }
 
                     console.log("📁 Model loaded successfully:", modelInfo["Source"])
 
-                    // Анализ узлов
-                    traverseNode(modelNode, 0, "root")
+                    // Анализ узлов с улучшенным получением названий
+                    traverseNodeEnhanced(modelNode, 0, "RootModel", "")
 
                     // Обновляем статистику
                     totalNodes = _internalSkeletonData.length
@@ -522,17 +523,19 @@ Window {
                               Math.max.apply(Math, _internalSkeletonData.map(function(item) { return item.level })) : 0
 
                     skeletonNodesCount = _internalSkeletonData.filter(function(node) {
-                        return node.properties.some(function(prop) {
-                            return prop.toLowerCase().includes("skeleton") ||
-                                   prop.toLowerCase().includes("bone") ||
-                                   prop.toLowerCase().includes("skin")
-                        })
+                        return node.isSkeleton || node.isBone || node.hasSkin || node.hasAnimation
                     }).length
 
-                    // Обновляем модель для отображения
-                    displayModel = _internalSkeletonData.slice() // Создаем копию массива
+                    // Сортируем по иерархии для лучшего отображения
+                    _internalSkeletonData.sort(function(a, b) {
+                        if (a.level !== b.level) return a.level - b.level
+                        return a.hierarchyIndex - b.hierarchyIndex
+                    })
 
-                    analyzeForAnimation(modelNode)
+                    // Обновляем модель для отображения
+                    displayModel = _internalSkeletonData.slice()
+
+                    analyzeSkeletonStructure(modelNode)
                 } else {
                     modelInfo = {
                         "Status": "❌ Failed or Not Ready",
@@ -542,9 +545,9 @@ Window {
                     console.log("❌ Model analysis failed:", modelInfo["Error"])
                 }
 
-                console.log("📊 Analysis complete. Found", totalNodes, "nodes")
-                console.log("🦴 Skeleton nodes found:", skeletonNodesCount)
-                console.log("=== ANALYSIS COMPLETED ===")
+                console.log("📊 Enhanced analysis complete. Found", totalNodes, "nodes")
+                console.log("🦴 Skeleton-related nodes found:", skeletonNodesCount)
+                console.log("=== ENHANCED ANALYSIS COMPLETED ===")
 
                 // Принудительно обновляем привязки
                 modelInfoChanged()
@@ -553,157 +556,253 @@ Window {
                 skeletonNodesCountChanged()
             }
 
-            function exportToConsole() {
-                console.log("=== SKELETON ANALYSIS EXPORT ===")
-                console.log("Model Info:", JSON.stringify(modelInfo, null, 2))
-                console.log("Skeleton Data:", JSON.stringify(_internalSkeletonData, null, 2))
-                console.log("=== END EXPORT ===")
-            }
-
-            function traverseNode(node, level, parentName) {
+            function traverseNodeEnhanced(node, level, parentName, hierarchyPath) {
                 if (!node) return
 
-                var indent = "  ".repeat(level)
+                var hierarchyIndex = _internalSkeletonData.length
+                var realName = extractRealNodeName(node)
+                var nodeType = getEnhancedNodeType(node)
+                var fullPath = hierarchyPath ? hierarchyPath + "/" + realName : realName
+
                 var nodeInfo = {
                     "level": level,
-                    "name": getNodeName(node, level),
-                    "type": getNodeType(node),
+                    "name": realName,
+                    "displayName": realName,
+                    "type": nodeType,
                     "parent": parentName,
+                    "hierarchyPath": fullPath,
+                    "hierarchyIndex": hierarchyIndex,
                     "hasChildren": false,
-                    "properties": []
+                    "childCount": 0,
+                    "properties": [],
+                    "isSkeleton": false,
+                    "isBone": false,
+                    "hasSkin": false,
+                    "hasAnimation": false,
+                    "isGeometry": false,
+                    "isMaterial": false
                 }
 
-                console.log(indent + "🔍 Analyzing node:", nodeInfo.name, "Type:", nodeInfo.type)
+                var indent = "  ".repeat(level)
+                console.log(indent + "🔍 Analyzing:", realName, "(" + nodeType + ")")
 
-                // Анализ свойств узла
-                analyzeNodeProperties(node, nodeInfo)
+                // Детальный анализ свойств узла
+                analyzeNodePropertiesEnhanced(node, nodeInfo)
+
+                // Определяем иконку для узла
+                nodeInfo.icon = getNodeIcon(nodeInfo)
 
                 _internalSkeletonData.push(nodeInfo)
 
                 // Анализ дочерних узлов
-                var childCount = analyzeChildren(node, level, nodeInfo.name)
+                var childCount = analyzeChildrenEnhanced(node, level, realName, fullPath)
                 if (childCount > 0) {
                     nodeInfo.hasChildren = true
+                    nodeInfo.childCount = childCount
                     nodeInfo.properties.push("👥 Children: " + childCount)
                 }
+
+                return hierarchyIndex
             }
 
-            function getNodeName(node, level) {
+            function extractRealNodeName(node) {
+                // Пытаемся получить реальное название из различных источников
+                var name = ""
+
+                // 1. Проверяем objectName (QML property)
                 if (node.objectName && node.objectName !== "") {
-                    return node.objectName
+                    name = node.objectName
+                }
+                // 2. Проверяем свойство name
+                else if (typeof node.name !== 'undefined' && node.name !== "") {
+                    name = node.name
+                }
+                // 3. Проверяем свойство id
+                else if (typeof node.id !== 'undefined' && node.id !== "") {
+                    name = node.id
+                }
+                // 4. Для Joint узлов проверяем joint-специфичные свойства
+                else if (node.toString().includes("Joint")) {
+                    name = "Joint_" + Math.random().toString(36).substr(2, 4)
+                }
+                // 5. Для Model узлов пытаемся извлечь название из источника
+                else if (node.toString().includes("Model") && typeof node.source !== 'undefined') {
+                    var sourceName = extractFileName(node.source.toString())
+                    name = sourceName.replace(/\.[^/.]+$/, "") // Убираем расширение
+                }
+                // 6. Последняя попытка - парсим название из toString()
+                else {
+                    var nodeString = node.toString()
+                    var match = nodeString.match(/(\w+)_\w+\(/)
+                    if (match && match[1]) {
+                        name = match[1]
+                    } else {
+                        name = "UnknownNode"
+                    }
                 }
 
-                if (typeof node.name !== 'undefined' && node.name !== "") {
-                    return node.name
-                }
-
-                return "Node_Level_" + level + "_" + Math.random().toString(36).substr(2, 5)
+                return name || "UnnamedNode"
             }
 
-            function getNodeType(node) {
-                var typeStr = node.toString()
-                if (typeStr.includes("(")) {
-                    return typeStr.split("(")[0]
-                }
-                return "Unknown"
+            function getEnhancedNodeType(node) {
+                var nodeString = node.toString()
+
+                // Специфичные типы Qt3D/QtQuick3D
+                if (nodeString.includes("Joint")) return "Joint"
+                if (nodeString.includes("Skeleton")) return "Skeleton"
+                if (nodeString.includes("Model")) return "Model"
+                if (nodeString.includes("Node")) return "Node"
+                if (nodeString.includes("Camera")) return "Camera"
+                if (nodeString.includes("Light")) return "Light"
+                if (nodeString.includes("Material")) return "Material"
+                if (nodeString.includes("Texture")) return "Texture"
+                if (nodeString.includes("Geometry")) return "Geometry"
+                if (nodeString.includes("Mesh")) return "Mesh"
+                if (nodeString.includes("Animation")) return "Animation"
+
+                // Попытка извлечь тип из строкового представления
+                var match = nodeString.match(/^(\w+)/)
+                return match ? match[1] : "Unknown"
             }
 
-            function analyzeNodeProperties(node, nodeInfo) {
+            function analyzeNodePropertiesEnhanced(node, nodeInfo) {
                 try {
-                    // Position analysis
+                    // Основные трансформации
                     if (typeof node.position !== 'undefined') {
-                        nodeInfo.properties.push("📍 Position: " + formatVector3D(node.position))
-                    }
-
-                    // Rotation analysis
-                    if (typeof node.eulerRotation !== 'undefined') {
-                        nodeInfo.properties.push("🔄 Rotation: " + formatVector3D(node.eulerRotation))
-                    }
-
-                    // Scale analysis
-                    if (typeof node.scale !== 'undefined') {
-                        nodeInfo.properties.push("📏 Scale: " + formatVector3D(node.scale))
-                    }
-
-                    // Skeleton-specific properties
-                    if (typeof node.skeleton !== 'undefined') {
-                        nodeInfo.properties.push("🦴 Has Skeleton: YES")
-                        console.log("    🎯 SKELETON FOUND!")
-                        if (node.skeleton && node.skeleton.joints) {
-                            nodeInfo.properties.push("🦴 Joints Count: " + node.skeleton.joints.length)
-                            console.log("    🦴 Joints:", node.skeleton.joints.length)
+                        var pos = node.position
+                        if (pos.x !== 0 || pos.y !== 0 || pos.z !== 0) {
+                            nodeInfo.properties.push("📍 Position: " + formatVector3D(pos))
                         }
                     }
 
-                    // Bones analysis
-                    if (typeof node.bones !== 'undefined') {
-                        nodeInfo.properties.push("🦴 Has Bones: YES")
-                        console.log("    🎯 BONES FOUND!")
+                    if (typeof node.eulerRotation !== 'undefined') {
+                        var rot = node.eulerRotation
+                        if (rot.x !== 0 || rot.y !== 0 || rot.z !== 0) {
+                            nodeInfo.properties.push("🔄 Rotation: " + formatVector3D(rot))
+                        }
                     }
 
-                    // Skin analysis
+                    if (typeof node.scale !== 'undefined') {
+                        var scale = node.scale
+                        if (scale.x !== 1 || scale.y !== 1 || scale.z !== 1) {
+                            nodeInfo.properties.push("📏 Scale: " + formatVector3D(scale))
+                        }
+                    }
+
+                    // Skeleton и Bone анализ
+                    if (typeof node.skeleton !== 'undefined') {
+                        nodeInfo.isSkeleton = true
+                        nodeInfo.properties.push("🦴 Skeleton Node")
+                        if (node.skeleton && typeof node.skeleton.joints !== 'undefined') {
+                            nodeInfo.properties.push("🦴 Joints: " + node.skeleton.joints.length)
+                        }
+                    }
+
+                    if (node.toString().includes("Joint") || typeof node.joint !== 'undefined') {
+                        nodeInfo.isBone = true
+                        nodeInfo.properties.push("🦴 Bone/Joint")
+                    }
+
+                    // Skin анализ
                     if (typeof node.skin !== 'undefined') {
-                        nodeInfo.properties.push("🦴 Has Skin: YES")
-                        console.log("    🎯 SKIN FOUND!")
+                        nodeInfo.hasSkin = true
+                        nodeInfo.properties.push("👤 Has Skin")
                     }
 
-                    // Animation analysis
-                    if (typeof node.animations !== 'undefined') {
-                        nodeInfo.properties.push("🎬 Has Animations: YES")
-                        console.log("    🎯 ANIMATIONS FOUND!")
+                    // Animation анализ
+                    if (typeof node.animations !== 'undefined' && node.animations.length > 0) {
+                        nodeInfo.hasAnimation = true
+                        nodeInfo.properties.push("🎬 Animations: " + node.animations.length)
                     }
 
-                    // Material analysis
-                    if (typeof node.materials !== 'undefined') {
-                        nodeInfo.properties.push("🎨 Has Materials: YES")
-                    }
-
-                    // Geometry analysis
+                    // Geometry анализ
                     if (typeof node.geometry !== 'undefined') {
-                        nodeInfo.properties.push("📐 Has Geometry: YES")
+                        nodeInfo.isGeometry = true
+                        nodeInfo.properties.push("📐 Has Geometry")
                     }
 
-                    // Source analysis
+                    // Material анализ
+                    if (typeof node.materials !== 'undefined' && node.materials.length > 0) {
+                        nodeInfo.isMaterial = true
+                        nodeInfo.properties.push("🎨 Materials: " + node.materials.length)
+                    }
+
+                    // Source файл
                     if (typeof node.source !== 'undefined') {
-                        nodeInfo.properties.push("📄 Source: " + node.source.toString().split('/').pop())
+                        nodeInfo.properties.push("📄 Source: " + extractFileName(node.source.toString()))
+                    }
+
+                    // Дополнительные свойства для отладки
+                    if (typeof node.visible !== 'undefined' && !node.visible) {
+                        nodeInfo.properties.push("👁️ Hidden")
+                    }
+
+                    if (typeof node.opacity !== 'undefined' && node.opacity < 1) {
+                        nodeInfo.properties.push("🌫️ Opacity: " + node.opacity.toFixed(2))
                     }
 
                 } catch (e) {
-                    console.log("    ⚠️ Error analyzing properties:", e.toString())
-                    nodeInfo.properties.push("⚠️ Analysis Error: " + e.toString())
+                    console.log("⚠️ Error analyzing enhanced properties:", e.toString())
+                    nodeInfo.properties.push("⚠️ Analysis Error")
                 }
             }
 
-            function analyzeChildren(node, level, nodeName) {
+            function analyzeChildrenEnhanced(node, level, nodeName, hierarchyPath) {
                 var childCount = 0
                 try {
                     if (node.children && node.children.length > 0) {
                         childCount = node.children.length
-                        console.log("    👥 Found", childCount, "children")
+                        console.log("    👥 Found", childCount, "children for", nodeName)
                         for (var i = 0; i < node.children.length; i++) {
-                            traverseNode(node.children[i], level + 1, nodeName)
+                            traverseNodeEnhanced(node.children[i], level + 1, nodeName, hierarchyPath)
                         }
                     }
-
-                    if (childCount === 0 && typeof node.childNodes !== 'undefined') {
-                        console.log("    🔍 Trying childNodes...")
-                    }
-
                 } catch (e) {
-                    console.log("    ⚠️ Could not access children:", e.toString())
+                    console.log("    ⚠️ Could not access children for", nodeName, ":", e.toString())
                 }
 
                 return childCount
             }
 
-            function analyzeForAnimation(modelNode) {
-                console.log("🎬 Checking for animation capabilities...")
+            function analyzeSkeletonStructure(modelNode) {
+                console.log("🦴 Analyzing skeleton structure...")
+
+                var skeletonNodes = _internalSkeletonData.filter(function(node) {
+                    return node.isSkeleton || node.isBone
+                })
+
+                if (skeletonNodes.length > 0) {
+                    console.log("🎯 Found skeleton structure with", skeletonNodes.length, "skeleton-related nodes")
+                    skeletonNodes.forEach(function(node) {
+                        console.log("  - " + node.name + " (" + node.type + ") at level " + node.level)
+                    })
+                } else {
+                    console.log("ℹ️ No explicit skeleton structure found")
+                }
+            }
+
+            function getNodeIcon(nodeInfo) {
+                if (nodeInfo.isSkeleton) return "🦴"
+                if (nodeInfo.isBone) return "🦴"
+                if (nodeInfo.hasSkin) return "👤"
+                if (nodeInfo.hasAnimation) return "🎬"
+                if (nodeInfo.isGeometry) return "📐"
+                if (nodeInfo.isMaterial) return "🎨"
+                if (nodeInfo.type === "Camera") return "📷"
+                if (nodeInfo.type === "Light") return "💡"
+                if (nodeInfo.hasChildren) return "📁"
+                return "📄"
+            }
+
+            function extractFileName(path) {
+                return path.split('/').pop().split('\\').pop()
+            }
+
+            function formatBounds(bounds) {
                 try {
-                    if (typeof modelNode.animations !== 'undefined') {
-                        console.log("🎯 Model has animations property")
-                    }
+                    return "Size: " + formatVector3D(bounds.maximum.minus(bounds.minimum))
                 } catch (e) {
-                    console.log("⚠️ Animation analysis error:", e.toString())
+                    return bounds.toString()
                 }
             }
 
@@ -714,6 +813,22 @@ Window {
                 } catch (e) {
                     return "Invalid Vector"
                 }
+            }
+
+            function exportToConsole() {
+                console.log("=== ENHANCED SKELETON ANALYSIS EXPORT ===")
+                console.log("Model Info:", JSON.stringify(modelInfo, null, 2))
+                console.log("\nHierarchy Tree:")
+                _internalSkeletonData.forEach(function(node) {
+                    var indent = "  ".repeat(node.level)
+                    console.log(indent + node.icon + " " + node.name + " (" + node.type + ")")
+                    if (node.properties.length > 0) {
+                        node.properties.forEach(function(prop) {
+                            console.log(indent + "  └─ " + prop)
+                        })
+                    }
+                })
+                console.log("=== END ENHANCED EXPORT ===")
             }
         }
 
