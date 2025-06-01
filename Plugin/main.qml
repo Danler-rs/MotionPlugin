@@ -113,6 +113,9 @@ Window {
                 // Передаем анализатор в bone manipulator
                 boneControlWindow.manipulator.skeletonAnalyzer = skeletonWindow.analyzer
 
+                // Передаем ссылку на загруженную модель
+                boneControlWindow.manipulator.setLoadedModel(importNode)
+
                 // Автоматически открываем окно управления костями
                 boneControlWindow.visible = true
                 boneControlWindow.manipulator.enableManipulation(true)
