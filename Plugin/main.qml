@@ -21,10 +21,13 @@ Window {
                Qt.WindowMinMaxButtonsHint | Qt.WindowCloseButtonHint | Qt.WindowFullscreenButtonHint
 
     property url importUrl;
-    property bool showSkeletonPanel: false
 
     SkeletonWindow {
         id: skeletonWindow
+    }
+
+    BoneControlWindow {
+        id: boneControlWindow
     }
 
     GridManager {
@@ -50,6 +53,7 @@ Window {
         }
         cameraHelper: cameraHelper
         gridManager: gridManager
+        boneManipulator: boneControlWindow.manipulator
 
         onOrbitModeRequested: cameraHelper.switchController(true)
         onWasdModeRequested: cameraHelper.switchController(false)
@@ -57,11 +61,18 @@ Window {
         onToggleGridRequested: gridManager.toggleGrid()
         onImportModelRequested: fileDialog.open()
         onToggleSkeletonRequested: skeletonWindow.visible = !skeletonWindow.visible
+        onToggleBoneManipulationRequested: boneControlWindow.visible = !boneControlWindow.visible
     }
 
     View3D {
         id: view3D
-        anchors.fill: parent
+        anchors {
+            top: controlPanel.bottom
+            left: parent.left
+            right: parent.right
+            bottom: statusBar.top
+        }
+
         environment: SceneEnvironment {
             clearColor: "#404040"
             backgroundMode: SceneEnvironment.Color
@@ -72,15 +83,39 @@ Window {
             antialiasingMode: SceneEnvironment.MSAA
             antialiasingQuality: SceneEnvironment.High
         }
-        
+
         RuntimeLoader {
             id: importNode
             source: windowRoot.importUrl
             onBoundsChanged: cameraHelper.updateBounds(bounds)
             onStatusChanged: {
                 if (status === RuntimeLoader.Success) {
+                    console.log("Model loaded successfully")
                     skeletonWindow.analyzer.analyzeSkeleton(importNode)
+
+                    // Автоматически настраиваем bone manipulator
+                    if (skeletonWindow.analyzer.skeletonNodesCount > 0) {
+                        // Небольшая задержка для корректной инициализации
+                        boneSetupTimer.start()
+                    }
+                } else if (status === RuntimeLoader.Error) {
+                    console.log("Error loading model:", importNode.errorString)
                 }
+            }
+        }
+
+        // Таймер для настройки bone manipulator
+        Timer {
+            id: boneSetupTimer
+            interval: 500
+            repeat: false
+            onTriggered: {
+                // Передаем анализатор в bone manipulator
+                boneControlWindow.manipulator.skeletonAnalyzer = skeletonWindow.analyzer
+
+                // Автоматически открываем окно управления костями
+                boneControlWindow.visible = true
+                boneControlWindow.manipulator.enableManipulation(true)
             }
         }
 
@@ -125,6 +160,17 @@ Window {
             eulerRotation.x: -35
             eulerRotation.y: -90
             castsShadow: true
+            brightness: 1.0
+        }
+
+        // Дополнительное освещение
+        PointLight {
+            id: pointLight
+            position: cameraHelper.orbitControllerEnabled ?
+                     orbitCamera.scenePosition :
+                     wasdCamera.position
+            brightness: 0.3
+            castsShadow: false
         }
 
         Model {
@@ -160,18 +206,23 @@ Window {
 
     FileDialog {
         id: fileDialog
-        nameFilters: ["gITF files (*.gITF *.glb)", "All files (*)"]
-        onAccepted: importUrl = file
+        title: "Select 3D Model"
+        nameFilters: ["glTF files (*.gltf *.glb)", "All files (*)"]
+        onAccepted: {
+            console.log("Loading model:", currentFile)
+            importUrl = currentFile
+        }
+
         Settings {
             id: fileDialogSettings
             category: "QtQuick3D.Examples.RuntimeLoader"
-            property alias folder: fileDialog.folder  
+            property alias folder: fileDialog.folder
         }
     }
 
     OrbitCameraController {
         id: orbitController
-        anchors.fill: parent
+        anchors.fill: view3D
         origin: orbitCameraNode
         camera: orbitCamera
         enabled: cameraHelper.orbitControllerEnabled
@@ -179,14 +230,73 @@ Window {
 
     WasdController {
         id: wasdController
-        anchors.fill: parent
+        anchors.fill: view3D
         controlledObject: wasdCamera
         enabled: !cameraHelper.orbitControllerEnabled
         speed: 5.0
         shiftSpeed: 15.0
     }
 
+    // Статусная строка
+    Rectangle {
+        id: statusBar
+        anchors {
+            left: parent.left
+            right: parent.right
+            bottom: parent.bottom
+        }
+        height: 30
+        color: "#333333"
+        border.color: "#666666"
+        border.width: 1
+
+        RowLayout {
+            anchors.fill: parent
+            anchors.margins: 8
+            spacing: 10
+
+            Text {
+                text: getStatusText()
+                color: "white"
+                font.pixelSize: 11
+                Layout.fillWidth: true
+            }
+
+            Text {
+                text: boneControlWindow.manipulator && boneControlWindow.manipulator.selectedBoneIndex !== null ?
+                      "Selected: " + boneControlWindow.manipulator.selectedBoneData.name :
+                      "No bone selected"
+                color: boneControlWindow.manipulator && boneControlWindow.manipulator.selectedBoneIndex !== null ? "#4CAF50" : "#888888"
+                font.pixelSize: 10
+            }
+
+            Text {
+                text: boneControlWindow.visible ? "🦴 Bone Control: ON" : "🦴 Bone Control: OFF"
+                color: boneControlWindow.visible ? "#4CAF50" : "#888888"
+                font.pixelSize: 10
+                font.bold: true
+            }
+        }
+    }
+
     Component.onCompleted: {
+        console.log("Motion Plugin initialized")
         cameraHelper.resetView()
+    }
+
+    function getStatusText() {
+        var status = "Ready to load model"
+
+        if (importNode.status === RuntimeLoader.Loading) {
+            status = "⏳ Loading model..."
+        } else if (importNode.status === RuntimeLoader.Success) {
+            var nodeCount = skeletonWindow.analyzer.totalNodes
+            var boneCount = skeletonWindow.analyzer.skeletonNodesCount
+            status = "✅ Model loaded: " + nodeCount + " nodes, " + boneCount + " bones"
+        } else if (importNode.status === RuntimeLoader.Error) {
+            status = "❌ Error: " + importNode.errorString
+        }
+
+        return status
     }
 }
