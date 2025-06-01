@@ -17,12 +17,6 @@ CONFIG(debug, debug|release) {
     DESTDIR = $$OUT_PWD/../ConsoleApp/release/plugins
 }
 
-win32 {
-    INCLUDEPATH += "K:/QtProj/MotionPlugin/Plugin/thirdParty/include/assimp"
-    LIBS += -L"K:/QtProj/MotionPlugin/Plugin/thirdParty/include/lib"
-    LIBS += -lassimp
-}
-
 
 SOURCES += \
     motionplugin.cpp
