@@ -6,5 +6,7 @@
         <file>ControlPanelUI.qml</file>
         <file>SkeletonAnalyzer.qml</file>
         <file>SkeletonWindow.qml</file>
+        <file>BoneManipulator.qml</file>
+        <file>BoneControlWindow.qml</file>
     </qresource>
 </RCC>

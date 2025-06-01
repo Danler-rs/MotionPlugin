@@ -15,6 +15,7 @@ Rectangle {
     // Публичные свойства
     property var cameraHelper
     property var gridManager
+    property var boneManipulator
 
     color: "#80000000"
     height: 50
@@ -27,6 +28,7 @@ Rectangle {
     signal toggleGridRequested()
     signal importModelRequested()
     signal toggleSkeletonRequested()
+    signal toggleBoneManipulationRequested()
 
     RowLayout {
         anchors {
@@ -98,20 +100,59 @@ Rectangle {
             text: "Загрузить модель"
             Layout.preferredWidth: 120
             onClicked: importModelRequested()
+            ToolTip.visible: hovered
+            ToolTip.text: "Загрузить 3D модель (glTF, GLB)"
         }
 
         Button {
             text: "Skeleton Analysis"
+            Layout.preferredWidth: 120
             onClicked: toggleSkeletonRequested()
+            ToolTip.visible: hovered
+            ToolTip.text: "Открыть окно анализа скелета"
+        }
+
+        Button {
+            id: boneManipulationButton
+            text: "🦴 Bone Control"
+            Layout.preferredWidth: 120
+            background: Rectangle {
+                color: (boneManipulator && boneManipulator.manipulationEnabled) ? "#007acc" : "#444444"
+                radius: 4
+            }
+            contentItem: Text {
+                text: boneManipulationButton.text
+                color: "white"
+                horizontalAlignment: Text.AlignHCenter
+                verticalAlignment: Text.AlignVCenter
+            }
+            onClicked: toggleBoneManipulationRequested()
+            ToolTip.visible: hovered
+            ToolTip.text: "Открыть окно управления костями"
         }
 
         Item { Layout.fillWidth: true } // Расширитель
 
-        Label {
-            text: cameraHelper.orbitControllerEnabled ? "Текущий режим: Orbit" : "Текущий режим: WASD"
-            color: "white"
-            font.pixelSize: 14
+        // Индикаторы состояния
+        Column {
             Layout.alignment: Qt.AlignRight
+            spacing: 2
+
+            Label {
+                text: cameraHelper.orbitControllerEnabled ? "Режим: Orbit" : "Режим: WASD"
+                color: "white"
+                font.pixelSize: 12
+                horizontalAlignment: Text.AlignRight
+            }
+
+            Label {
+                text: (boneManipulator && boneManipulator.manipulationEnabled) ?
+                      "🦴 Bone Control: ON" :
+                      "🦴 Bone Control: OFF"
+                color: (boneManipulator && boneManipulator.manipulationEnabled) ? "#00ff00" : "#888888"
+                font.pixelSize: 10
+                horizontalAlignment: Text.AlignRight
+            }
         }
     }
 }

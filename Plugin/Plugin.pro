@@ -26,6 +26,8 @@ HEADERS += \
     ../common/pluginInterface.h
 
 DISTFILES += Plugin.json \
+    BoneControlWindow.qml \
+    BoneManipulator.qml \
     CameraHelper.qml \
     ControlPanelUI.qml \
     GridManager.qml \
