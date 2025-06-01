@@ -4,5 +4,7 @@
         <file>CameraHelper.qml</file>
         <file>GridManager.qml</file>
         <file>ControlPanelUI.qml</file>
+        <file>SkeletonAnalyzer.qml</file>
+        <file>SkeletonWindow.qml</file>
     </qresource>
 </RCC>

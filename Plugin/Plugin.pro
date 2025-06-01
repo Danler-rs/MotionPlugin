@@ -29,6 +29,8 @@ DISTFILES += Plugin.json \
     CameraHelper.qml \
     ControlPanelUI.qml \
     GridManager.qml \
+    SkeletonAnalyzer.qml \
+    SkeletonWindow.qml \
     main.qml
 
 INCLUDEPATH += ../common
