@@ -38,7 +38,7 @@ QtObject {
         wasdController.shiftSpeed = 3 * wasdController.speed
         wasdCamera.clipNear = boundsDiameter / 100
         wasdCamera.clipFar = boundsDiameter * 10
-        view3D.resetView()
+        resetView()
     }
 
     function switchController(useOrbitController) {
