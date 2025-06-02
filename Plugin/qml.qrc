@@ -8,5 +8,7 @@
         <file>SkeletonWindow.qml</file>
         <file>BoneManipulator.qml</file>
         <file>BoneControlWindow.qml</file>
+        <file>TimeLineView.qml</file>
+        <file>KeyFrameManager.qml</file>
     </qresource>
 </RCC>

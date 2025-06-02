@@ -44,6 +44,32 @@ Window {
         view3d: view3D
     }
 
+    KeyFrameManager {
+        id: keyframeManager
+        view3d: view3D
+        orbitCameraNode: orbitCameraNode
+        orbitCamera: orbitCamera
+        wasdCamera: wasdCamera
+        cameraHelper: cameraHelper
+        gridManager: gridManager
+        boneManipulator: boneControlWindow.manipulator
+        loadedModel: importNode
+        directionalLight: directionalLight
+        pointLight: pointLight
+
+        onKeyframeSaved: function(frame, data) {
+            console.log("✅ Keyframe saved for frame", frame + 1)
+        }
+
+        onKeyframeLoaded: function(frame, data) {
+            console.log("📂 Keyframe loaded for frame", frame + 1)
+        }
+
+        onKeyframeDeleted: function(frame) {
+            console.log("🗑️ Keyframe deleted for frame", frame + 1)
+        }
+    }
+
     ControlPanelUI {
         id: controlPanel
         anchors {
@@ -54,6 +80,7 @@ Window {
         cameraHelper: cameraHelper
         gridManager: gridManager
         boneManipulator: boneControlWindow.manipulator
+        keyframeManager: keyframeManager
 
         onOrbitModeRequested: cameraHelper.switchController(true)
         onWasdModeRequested: cameraHelper.switchController(false)
@@ -62,6 +89,10 @@ Window {
         onImportModelRequested: fileDialog.open()
         onToggleSkeletonRequested: skeletonWindow.visible = !skeletonWindow.visible
         onToggleBoneManipulationRequested: boneControlWindow.visible = !boneControlWindow.visible
+        onExportKeyframesRequested: {
+            var keyframesData = keyframeManager.exportKeyframes()
+            console.log("✅ Keyframes exported to console")
+        }
     }
 
     View3D {
@@ -240,6 +271,41 @@ Window {
         shiftSpeed: 15.0
     }
 
+    TimeLineView {
+        id: timeline
+        anchors {
+            left: parent.left
+            right: parent.right
+            bottom: statusBar.top
+        }
+        height: 120
+        keyframeManager: keyframeManager
+
+        onFrameSelected: function(frame) {
+            console.log("Frame selected:", frame + 1)
+        }
+
+        onKeyframeSaveRequested: function(frame) {
+            console.log("Main: Saving keyframe for frame:", frame + 1)
+            keyframeManager.saveKeyframe(frame)
+            // Принудительное обновление Timeline
+            timeline.refreshDisplay()
+        }
+
+        onKeyframeLoadRequested: function(frame) {
+            console.log("Main: Loading keyframe for frame:", frame + 1)
+            keyframeManager.loadKeyframe(frame)
+        }
+
+        onKeyframeDeleteRequested: function(frame) {
+            console.log("Main: Deleting keyframe for frame:", frame + 1)
+            var success = keyframeManager.deleteKeyframe(frame)
+            console.log("Deletion result:", success)
+            // Принудительное обновление Timeline
+            timeline.refreshDisplay()
+        }
+    }
+
     // Статусная строка
     Rectangle {
         id: statusBar
@@ -270,6 +336,12 @@ Window {
                       "Selected: " + boneControlWindow.manipulator.selectedBoneData.name :
                       "No bone selected"
                 color: boneControlWindow.manipulator && boneControlWindow.manipulator.selectedBoneIndex !== null ? "#4CAF50" : "#888888"
+                font.pixelSize: 10
+            }
+
+            Text {
+                text: "Frame: " + (timeline.currentFrame + 1) + "/30 | Keyframes: " + timeline.getKeyframes().length
+                color: "#888888"
                 font.pixelSize: 10
             }
 
