@@ -16,6 +16,7 @@ Rectangle {
     property var cameraHelper
     property var gridManager
     property var boneManipulator
+    property var keyframeManager
 
     color: "#80000000"
     height: 50
@@ -29,6 +30,7 @@ Rectangle {
     signal importModelRequested()
     signal toggleSkeletonRequested()
     signal toggleBoneManipulationRequested()
+    signal exportKeyframesRequested()
 
     RowLayout {
         anchors {
@@ -131,6 +133,14 @@ Rectangle {
             ToolTip.text: "Открыть окно управления костями"
         }
 
+        Button {
+            text: "💾 Export Keyframes"
+            Layout.preferredWidth: 140
+            onClicked: exportKeyframesRequested()
+            ToolTip.visible: hovered
+            ToolTip.text: "Экспорт всех ключевых кадров в консоль"
+        }
+
         Item { Layout.fillWidth: true } // Расширитель
 
         // Индикаторы состояния
@@ -150,6 +160,15 @@ Rectangle {
                       "🦴 Bone Control: ON" :
                       "🦴 Bone Control: OFF"
                 color: (boneManipulator && boneManipulator.manipulationEnabled) ? "#00ff00" : "#888888"
+                font.pixelSize: 10
+                horizontalAlignment: Text.AlignRight
+            }
+
+            Label {
+                text: keyframeManager ?
+                      ("🎬 Keyframes: " + keyframeManager.getAllKeyframes().length) :
+                      "🎬 Keyframes: 0"
+                color: (keyframeManager && keyframeManager.getAllKeyframes().length > 0) ? "#FF9800" : "#888888"
                 font.pixelSize: 10
                 horizontalAlignment: Text.AlignRight
             }
