@@ -93,7 +93,7 @@ Rectangle {
             Layout.preferredWidth: 120
             onClicked: {
                 toggleGridRequested()
-                gridState = gridManager.gridEnabled // Обновляем локальное свойство для обновления текста
+                gridState = gridManager.gridEnabled
             }
             ToolTip.visible: hovered
             ToolTip.text: "Показать/скрыть вспомогательную сетку"
@@ -164,7 +164,7 @@ Rectangle {
 
         Item { Layout.fillWidth: true } // Расширитель
 
-        // Индикаторы состояния
+        // Индикаторы состояния (УДАЛЕН счетчик ключевых кадров)
         Column {
             Layout.alignment: Qt.AlignRight
             spacing: 2
@@ -184,50 +184,6 @@ Rectangle {
                 font.pixelSize: 10
                 horizontalAlignment: Text.AlignRight
             }
-
-            Label {
-                text: keyframeManager ?
-                      ("🎬 Keyframes: " + getKeyframeCount()) :
-                      "🎬 Keyframes: 0"
-                color: (keyframeManager && getKeyframeCount() > 0) ? "#FF9800" : "#888888"
-                font.pixelSize: 10
-                horizontalAlignment: Text.AlignRight
-            }
-        }
-    }
-
-    // Функция для получения количества ключевых кадров
-    function getKeyframeCount() {
-        if (!keyframeManager) return 0
-
-        try {
-            var keyframes = keyframeManager.getAllKeyframes()
-            console.log("ControlPanel: Getting keyframes:", keyframes, "Type:", typeof keyframes)
-
-            if (Array.isArray(keyframes)) {
-                return keyframes.length
-            } else if (typeof keyframes === 'object' && keyframes !== null) {
-                return Object.keys(keyframes).length
-            }
-        } catch (e) {
-            console.log("ControlPanel: Error getting keyframe count:", e)
-        }
-
-        return 0
-    }
-
-    // Подключения для обновления UI при изменении ключевых кадров
-    Connections {
-        target: keyframeManager
-
-        function onKeyframeSaved() {
-            // Принудительное обновление UI
-            root.forceActiveFocus()
-        }
-
-        function onKeyframeDeleted() {
-            // Принудительное обновление UI
-            root.forceActiveFocus()
         }
     }
 }

@@ -26,7 +26,7 @@ Rectangle {
         anchors.margins: 8
         spacing: 5
 
-        // Заголовок таймлайна
+        // Заголовок таймлайна (УПРОЩЕН - без счетчика ключевых кадров)
         Row {
             width: parent.width
             spacing: 10
@@ -49,8 +49,8 @@ Rectangle {
             Item { Layout.fillWidth: true }
 
             Text {
-                text: "Keyframes: " + (keyframeManager ? keyframeManager.getAllKeyframes().length : 0)
-                color: "#FF9800"
+                text: "30 frames available"
+                color: "#888888"
                 font.pixelSize: 12
                 anchors.verticalCenter: parent.verticalCenter
             }
@@ -241,10 +241,6 @@ Rectangle {
 
     function hasKeyframe(frame) {
         return keyframeManager ? keyframeManager.hasKeyframe(frame) : false
-    }
-
-    function getKeyframes() {
-        return keyframeManager ? keyframeManager.getAllKeyframes() : []
     }
 
     function refreshDisplay() {
