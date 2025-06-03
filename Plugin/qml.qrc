@@ -11,5 +11,6 @@
         <file>TimeLineView.qml</file>
         <file>KeyFrameManager.qml</file>
         <file>ExportWindow.qml</file>
+        <file>PhysicsWindow.qml</file>
     </qresource>
 </RCC>

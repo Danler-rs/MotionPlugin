@@ -1,4 +1,4 @@
-QT += gui qml quick quick3d opengl widgets
+QT += gui qml quick quick3d opengl widgets quick3dphysics
 
 TEMPLATE = lib
 CONFIG += plugin
@@ -35,6 +35,7 @@ DISTFILES += Plugin.json \
     ExportWindow.qml \
     GridManager.qml \
     KeyFrameManager.qml \
+    PhysicsWindow.qml \
     SkeletonAnalyzer.qml \
     SkeletonWindow.qml \
     TimeLineView.qml \

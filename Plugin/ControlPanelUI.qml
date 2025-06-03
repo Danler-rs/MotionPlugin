@@ -17,6 +17,7 @@ Rectangle {
     property var gridManager
     property var boneManipulator
     property var keyframeManager
+    property var physicsWindow  // Добавлена ссылка на PhysicsWindow
 
     color: "#80000000"
     height: 50
@@ -30,6 +31,7 @@ Rectangle {
     signal importModelRequested()
     signal toggleSkeletonRequested()
     signal toggleBoneManipulationRequested()
+    signal togglePhysicsRequested()
     signal exportKeyframesRequested()
     signal exportAnimationRequested()
 
@@ -135,6 +137,24 @@ Rectangle {
         }
 
         Button {
+            text: "⚛️ Physics"
+            Layout.preferredWidth: 120
+            background: Rectangle {
+                color: (physicsWindow && physicsWindow.visible) ? "#007acc" : "#444444"
+                radius: 4
+            }
+            contentItem: Text {
+                text: parent.text
+                color: "white"
+                horizontalAlignment: Text.AlignHCenter
+                verticalAlignment: Text.AlignVCenter
+            }
+            onClicked: togglePhysicsRequested()
+            ToolTip.visible: hovered
+            ToolTip.text: "Открыть окно симуляции физики"
+        }
+
+        Button {
             text: "💾 Export Keyframes"
             Layout.preferredWidth: 140
             onClicked: exportKeyframesRequested()
@@ -164,7 +184,7 @@ Rectangle {
 
         Item { Layout.fillWidth: true } // Расширитель
 
-        // Индикаторы состояния (УДАЛЕН счетчик ключевых кадров)
+        // Индикаторы состояния
         Column {
             Layout.alignment: Qt.AlignRight
             spacing: 2
