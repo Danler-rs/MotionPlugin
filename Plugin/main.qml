@@ -7,8 +7,8 @@ import QtQuick.Dialogs
 import QtQuick3D.Helpers
 import QtQuick3D.AssetUtils
 import Qt.labs.platform
+import QtQuick3D.Physics
 import QtCore
-import MotionPlugin 1.0
 import MotionPlugin 1.0
 
 Window {
@@ -30,6 +30,19 @@ Window {
 
     BoneControlWindow {
         id: boneControlWindow
+    }
+
+    PhysicsWindow {
+        id: physicsWindow
+        sourceModel: importNode
+
+        // Debug
+        Component.onCompleted: {
+            console.log("main.qml: PhysicsWindow created")
+            console.log("main.qml: importNode =", importNode)
+            console.log("main.qml: importNode.source =", importNode.source)
+            console.log("main.qml: importNode.status =", importNode.status)
+        }
     }
 
     ExportWindow {
@@ -89,6 +102,7 @@ Window {
         gridManager: gridManager
         boneManipulator: boneControlWindow.manipulator
         keyframeManager: keyframeManager
+        physicsWindow: physicsWindow
 
         onOrbitModeRequested: cameraHelper.switchController(true)
         onWasdModeRequested: cameraHelper.switchController(false)
@@ -97,6 +111,12 @@ Window {
         onImportModelRequested: fileDialog.open()
         onToggleSkeletonRequested: skeletonWindow.visible = !skeletonWindow.visible
         onToggleBoneManipulationRequested: boneControlWindow.visible = !boneControlWindow.visible
+        onTogglePhysicsRequested: {
+            console.log("main.qml: Toggling physics window. Current visible:", physicsWindow.visible)
+            console.log("main.qml: Current sourceModel:", physicsWindow.sourceModel)
+            console.log("main.qml: Current hasLoadedModel:", physicsWindow.hasLoadedModel)
+            physicsWindow.visible = !physicsWindow.visible
+        }
         onExportKeyframesRequested: {
             var keyframesData = keyframeManager.exportKeyframes()
             console.log("✅ Keyframes exported to console")
@@ -138,6 +158,10 @@ Window {
                         // Небольшая задержка для корректной инициализации
                         boneSetupTimer.start()
                     }
+
+                    // Уведомляем PhysicsWindow о новой модели
+                    console.log("Notifying PhysicsWindow about loaded model")
+
                 } else if (status === RuntimeLoader.Error) {
                     console.log("Error loading model:", importNode.errorString)
                 }
@@ -384,6 +408,13 @@ Window {
             var nodeCount = skeletonWindow.analyzer.totalNodes
             var boneCount = skeletonWindow.analyzer.skeletonNodesCount
             status = "✅ Model loaded: " + nodeCount + " nodes, " + boneCount + " bones"
+
+            if (physicsWindow.visible) {
+                status += " | ⚛️ Physics: " + (physicsWindow.physicsWorld.running ? "Running" : "Paused")
+                if (physicsWindow.hasLoadedModel) {
+                    status += " (with loaded model)"
+                }
+            }
         } else if (importNode.status === RuntimeLoader.Error) {
             status = "❌ Error: " + importNode.errorString
         }
