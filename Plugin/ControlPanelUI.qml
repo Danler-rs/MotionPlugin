@@ -31,6 +31,7 @@ Rectangle {
     signal toggleSkeletonRequested()
     signal toggleBoneManipulationRequested()
     signal exportKeyframesRequested()
+    signal exportAnimationRequested()
 
     RowLayout {
         anchors {
@@ -141,6 +142,26 @@ Rectangle {
             ToolTip.text: "Экспорт всех ключевых кадров в консоль"
         }
 
+        Button {
+            text: "🎬 Export Animation"
+            Layout.preferredWidth: 140
+            background: Rectangle {
+                color: parent.pressed ? "#5a4d2d" : "#8b7a34"
+                border.color: "#777777"
+                radius: 4
+            }
+            contentItem: Text {
+                text: parent.text
+                color: "white"
+                horizontalAlignment: Text.AlignHCenter
+                verticalAlignment: Text.AlignVCenter
+                font.bold: true
+            }
+            onClicked: exportAnimationRequested()
+            ToolTip.visible: hovered
+            ToolTip.text: "Экспорт анимации в видео файл"
+        }
+
         Item { Layout.fillWidth: true } // Расширитель
 
         // Индикаторы состояния
@@ -166,12 +187,47 @@ Rectangle {
 
             Label {
                 text: keyframeManager ?
-                      ("🎬 Keyframes: " + keyframeManager.getAllKeyframes().length) :
+                      ("🎬 Keyframes: " + getKeyframeCount()) :
                       "🎬 Keyframes: 0"
-                color: (keyframeManager && keyframeManager.getAllKeyframes().length > 0) ? "#FF9800" : "#888888"
+                color: (keyframeManager && getKeyframeCount() > 0) ? "#FF9800" : "#888888"
                 font.pixelSize: 10
                 horizontalAlignment: Text.AlignRight
             }
+        }
+    }
+
+    // Функция для получения количества ключевых кадров
+    function getKeyframeCount() {
+        if (!keyframeManager) return 0
+
+        try {
+            var keyframes = keyframeManager.getAllKeyframes()
+            console.log("ControlPanel: Getting keyframes:", keyframes, "Type:", typeof keyframes)
+
+            if (Array.isArray(keyframes)) {
+                return keyframes.length
+            } else if (typeof keyframes === 'object' && keyframes !== null) {
+                return Object.keys(keyframes).length
+            }
+        } catch (e) {
+            console.log("ControlPanel: Error getting keyframe count:", e)
+        }
+
+        return 0
+    }
+
+    // Подключения для обновления UI при изменении ключевых кадров
+    Connections {
+        target: keyframeManager
+
+        function onKeyframeSaved() {
+            // Принудительное обновление UI
+            root.forceActiveFocus()
+        }
+
+        function onKeyframeDeleted() {
+            // Принудительное обновление UI
+            root.forceActiveFocus()
         }
     }
 }

@@ -99,19 +99,22 @@ Rectangle {
                     width: (root.width - 16 - (totalFrames - 1)) / totalFrames
                     height: 40
 
+                    // Сохраняем index в property для использования в MouseArea
+                    property int frameIndex: index
+
                     // Цвет кадра в зависимости от состояния
                     color: {
-                        if (keyframeManager && keyframeManager.hasKeyframe(index)) {
+                        if (keyframeManager && keyframeManager.hasKeyframe(frameIndex)) {
                             return "#FF9800" // Оранжевый для ключевых кадров
-                        } else if (index === currentFrame) {
+                        } else if (frameIndex === currentFrame) {
                             return "#4CAF50" // Зеленый для текущего кадра
                         } else {
                             return "#666666" // Серый для обычных кадров
                         }
                     }
 
-                    border.color: index === currentFrame ? "#81C784" : "#888888"
-                    border.width: index === currentFrame ? 2 : 1
+                    border.color: frameIndex === currentFrame ? "#81C784" : "#888888"
+                    border.width: frameIndex === currentFrame ? 2 : 1
                     radius: 2
 
                     // Индикатор ключевого кадра
@@ -121,7 +124,7 @@ Rectangle {
                         height: 8
                         radius: 4
                         color: "#FFF"
-                        visible: keyframeManager ? keyframeManager.hasKeyframe(index) : false
+                        visible: keyframeManager ? keyframeManager.hasKeyframe(frameIndex) : false
 
                         Rectangle {
                             anchors.centerIn: parent
@@ -137,10 +140,10 @@ Rectangle {
                         anchors.bottom: parent.bottom
                         anchors.horizontalCenter: parent.horizontalCenter
                         anchors.bottomMargin: 2
-                        text: index + 1
-                        color: (keyframeManager ? keyframeManager.hasKeyframe(index) : false) ? "white" : "#cccccc"
+                        text: frameIndex + 1
+                        color: (keyframeManager ? keyframeManager.hasKeyframe(frameIndex) : false) ? "white" : "#cccccc"
                         font.pixelSize: 9
-                        font.bold: keyframeManager ? keyframeManager.hasKeyframe(index) : false
+                        font.bold: keyframeManager ? keyframeManager.hasKeyframe(frameIndex) : false
                     }
 
                     // Обработка мыши
@@ -150,34 +153,34 @@ Rectangle {
                         hoverEnabled: true
 
                         onClicked: function(mouse) {
-                            console.log("Mouse clicked on frame", index + 1, "button:", mouse.button)
-                            console.log("Has keyframe:", keyframeManager ? keyframeManager.hasKeyframe(index) : false)
+                            console.log("Mouse clicked on frame", frameRect.frameIndex + 1, "button:", mouse.button)
+                            console.log("Has keyframe:", keyframeManager ? keyframeManager.hasKeyframe(frameRect.frameIndex) : false)
 
                             if (mouse.button === Qt.LeftButton) {
                                 // Левый клик
-                                if (index !== currentFrame) {
+                                if (frameRect.frameIndex !== currentFrame) {
                                     // Первый клик - переключение на кадр и загрузка ключевого кадра (если есть)
-                                    currentFrame = index
-                                    frameSelected(index)
+                                    currentFrame = frameRect.frameIndex
+                                    frameSelected(frameRect.frameIndex)
 
                                     // Если это ключевой кадр, загружаем его
-                                    if (keyframeManager && keyframeManager.hasKeyframe(index)) {
-                                        keyframeLoadRequested(index)
-                                        console.log("Loading keyframe for frame", index + 1)
+                                    if (keyframeManager && keyframeManager.hasKeyframe(frameRect.frameIndex)) {
+                                        keyframeLoadRequested(frameRect.frameIndex)
+                                        console.log("Loading keyframe for frame", frameRect.frameIndex + 1)
                                     }
                                 } else {
                                     // Второй клик на тот же кадр - создание/обновление ключевого кадра
-                                    keyframeSaveRequested(index)
-                                    console.log("Saving keyframe for frame", index + 1)
+                                    keyframeSaveRequested(frameRect.frameIndex)
+                                    console.log("Saving keyframe for frame", frameRect.frameIndex + 1)
                                 }
                             } else if (mouse.button === Qt.RightButton) {
                                 // Правый клик - удаление ключевого кадра
-                                console.log("Right click detected on frame", index + 1)
-                                if (keyframeManager && keyframeManager.hasKeyframe(index)) {
-                                    keyframeDeleteRequested(index)
-                                    console.log("Requesting deletion of keyframe for frame", index + 1)
+                                console.log("Right click detected on frame", frameRect.frameIndex + 1)
+                                if (keyframeManager && keyframeManager.hasKeyframe(frameRect.frameIndex)) {
+                                    keyframeDeleteRequested(frameRect.frameIndex)
+                                    console.log("Requesting deletion of keyframe for frame", frameRect.frameIndex + 1)
                                 } else {
-                                    console.log("No keyframe to delete for frame", index + 1)
+                                    console.log("No keyframe to delete for frame", frameRect.frameIndex + 1)
                                 }
                             }
                         }

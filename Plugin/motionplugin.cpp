@@ -19,6 +19,7 @@ QString MotionPlugin::name() const
 bool MotionPlugin::initialize()
 {
     m_engine = new QQmlApplicationEngine();
+    registerQmlTypes();
     return true;
 }
 
@@ -33,6 +34,10 @@ void MotionPlugin::showUI()
 
     const QUrl url(QStringLiteral("qrc:/main.qml"));
     m_engine->load(url);
+}
+
+void MotionPlugin::registerQmlTypes() {
+    qmlRegisterType<AnimationExporter>("MotionPlugin", 1, 0, "AnimationExporter");
 }
 
 

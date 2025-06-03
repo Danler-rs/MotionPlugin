@@ -10,5 +10,6 @@
         <file>BoneControlWindow.qml</file>
         <file>TimeLineView.qml</file>
         <file>KeyFrameManager.qml</file>
+        <file>ExportWindow.qml</file>
     </qresource>
 </RCC>
