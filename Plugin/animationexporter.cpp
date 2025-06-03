@@ -47,8 +47,22 @@ AnimationExporter::~AnimationExporter()
 void AnimationExporter::setExportPath(const QString &path)
 {
     if (m_exportPath != path) {
-        m_exportPath = path;
+        // ИСПРАВЛЕНО: Очистка пути от file:// и неправильных слешей
+        QString cleanPath = path;
+        if (cleanPath.startsWith("file:///")) {
+            cleanPath = cleanPath.mid(8); // Убираем "file:///"
+        } else if (cleanPath.startsWith("file://")) {
+            cleanPath = cleanPath.mid(7); // Убираем "file://"
+        }
+
+        // Убираем лишний слеш в начале для Windows путей
+        if (cleanPath.startsWith("/") && cleanPath.length() > 1 && cleanPath.at(2) == ':') {
+            cleanPath = cleanPath.mid(1);
+        }
+
+        m_exportPath = QDir::toNativeSeparators(cleanPath);
         emit exportPathChanged();
+        qDebug() << "Export path set to:" << m_exportPath;
     }
 }
 
@@ -210,29 +224,83 @@ void AnimationExporter::setupDirectories()
 
 void AnimationExporter::captureFrame(int frameIndex)
 {
-    QImage frame = captureView3D();
-
-    if (frame.isNull()) {
-        qDebug() << "Failed to capture frame" << frameIndex;
-        setStatus("Error: Failed to capture frame " + QString::number(frameIndex));
-        stopExport();
-        return;
+    // Находим и временно скрываем таймлайн
+    QQuickItem *timeline = nullptr;
+    if (m_view3d) {
+        QQuickItem *view3dItem = qobject_cast<QQuickItem*>(m_view3d);
+        if (view3dItem && view3dItem->window()) {
+            // Ищем таймлайн в корневом элементе окна
+            QQuickItem *rootItem = view3dItem->window()->contentItem();
+            timeline = findTimelineItem(rootItem);
+        }
     }
 
-    // Save frame with sequential numbering for FFmpeg
-    QString frameFileName = QString("%1/frame_%2.png")
-                                .arg(m_tempDir)
-                                .arg(m_currentFrame, 6, 10, QChar('0'));
-
-    if (!frame.save(frameFileName, "PNG")) {
-        qDebug() << "Failed to save frame" << frameIndex;
-        setStatus("Error: Failed to save frame " + QString::number(frameIndex));
-        stopExport();
-        return;
+    bool timelineWasVisible = false;
+    if (timeline) {
+        timelineWasVisible = timeline->isVisible();
+        timeline->setVisible(false);
+        qDebug() << "Timeline hidden for capture";
     }
 
-    m_capturedFrames.append(frameFileName);
-    qDebug() << "Captured frame" << frameIndex << "as" << frameFileName;
+    // Небольшая задержка для обновления UI
+    QTimer::singleShot(50, [this, frameIndex, timeline, timelineWasVisible]() {
+        QImage frame = captureView3D();
+
+        // Восстанавливаем видимость таймлайна
+        if (timeline) {
+            timeline->setVisible(timelineWasVisible);
+            qDebug() << "Timeline visibility restored";
+        }
+
+        if (frame.isNull()) {
+            qDebug() << "Failed to capture frame" << frameIndex;
+            setStatus("Error: Failed to capture frame " + QString::number(frameIndex));
+            stopExport();
+            return;
+        }
+
+        // Save frame with sequential numbering for FFmpeg
+        QString frameFileName = QString("%1/frame_%2.png")
+                                    .arg(m_tempDir)
+                                    .arg(m_currentFrame, 6, 10, QChar('0'));
+
+        if (!frame.save(frameFileName, "PNG")) {
+            qDebug() << "Failed to save frame" << frameIndex;
+            setStatus("Error: Failed to save frame " + QString::number(frameIndex));
+            stopExport();
+            return;
+        }
+
+        m_capturedFrames.append(frameFileName);
+        qDebug() << "Captured frame" << frameIndex << "as" << frameFileName;
+    });
+}
+
+QQuickItem* AnimationExporter::findTimelineItem(QQuickItem* parent)
+{
+    if (!parent) return nullptr;
+
+    // Проверяем текущий элемент
+    QString objectName = parent->objectName();
+    if (objectName.contains("timeline", Qt::CaseInsensitive) ||
+        objectName.contains("TimeLineView", Qt::CaseInsensitive)) {
+        return parent;
+    }
+
+    // Проверяем по типу
+    QString className = parent->metaObject()->className();
+    if (className.contains("TimeLineView")) {
+        return parent;
+    }
+
+    // Рекурсивно ищем в детях
+    const auto children = parent->childItems();
+    for (QQuickItem* child : children) {
+        QQuickItem* result = findTimelineItem(child);
+        if (result) return result;
+    }
+
+    return nullptr;
 }
 
 void AnimationExporter::loadKeyframe(int frameIndex)
@@ -271,30 +339,71 @@ QImage AnimationExporter::captureView3D()
         return QImage();
     }
 
-    // Capture the view3d area
-    QRectF itemRect = view3dItem->mapRectToScene(view3dItem->boundingRect());
-    QRect captureRect = itemRect.toRect();
+    // ИСПРАВЛЕНО: Получаем правильные координаты View3D в окне
+    QRectF view3dBounds = view3dItem->boundingRect();
 
-    // Grab the window content
+    // Используем mapRectToScene для получения правильной позиции
+    QRectF sceneRect = view3dItem->mapRectToScene(view3dBounds);
+
+    // Преобразуем в координаты окна
+    QRect captureRect(
+        static_cast<int>(sceneRect.x()),
+        static_cast<int>(sceneRect.y()),
+        static_cast<int>(sceneRect.width()),
+        static_cast<int>(sceneRect.height())
+        );
+
+    qDebug() << "View3D bounds:" << view3dBounds;
+    qDebug() << "View3D scene rect:" << sceneRect;
+    qDebug() << "Capture rect:" << captureRect;
+    qDebug() << "Window size:" << window->size();
+
+    // Захватываем всё окно
     QImage windowImage = window->grabWindow();
-
     if (windowImage.isNull()) {
         qDebug() << "Failed to grab window";
         return QImage();
     }
 
-    // Extract the view3d portion and scale it
-    QImage viewImage = windowImage.copy(captureRect);
+    qDebug() << "Window image size:" << windowImage.size();
 
-    if (viewImage.isNull()) {
-        qDebug() << "Failed to extract view area";
+    // ИСПРАВЛЕНО: Более точное определение области захвата
+    // Убеждаемся что область захвата в пределах окна
+    QRect windowRect(0, 0, windowImage.width(), windowImage.height());
+    captureRect = captureRect.intersected(windowRect);
+
+    // ИСПРАВЛЕНО: Добавляем проверку на разумность размеров
+    if (captureRect.isEmpty() || captureRect.width() < 50 || captureRect.height() < 50) {
+        qDebug() << "Capture rect is too small or empty:" << captureRect;
+        qDebug() << "Falling back to window center crop";
+
+        // Fallback: берем центральную часть окна, исключая верх и низ (где UI)
+        int margin = 60; // Отступ для UI элементов
+        captureRect = QRect(
+            0,
+            margin,
+            windowImage.width(),
+            windowImage.height() - margin * 2
+            );
+    }
+
+    qDebug() << "Final capture rect:" << captureRect;
+
+    // Извлекаем только область View3D
+    QImage view3dImage = windowImage.copy(captureRect);
+    if (view3dImage.isNull()) {
+        qDebug() << "Failed to extract view3d area";
         return windowImage; // Return full window if extraction fails
     }
 
-    // Scale to desired resolution
-    QImage scaledImage = viewImage.scaled(m_renderWidth, m_renderHeight,
-                                          Qt::IgnoreAspectRatio,
-                                          Qt::SmoothTransformation);
+    qDebug() << "Extracted image size:" << view3dImage.size();
+
+    // Масштабируем до желаемого разрешения
+    QImage scaledImage = view3dImage.scaled(m_renderWidth, m_renderHeight,
+                                            Qt::IgnoreAspectRatio,
+                                            Qt::SmoothTransformation);
+
+    qDebug() << "Final scaled image size:" << scaledImage.size();
 
     return scaledImage;
 }
@@ -312,7 +421,18 @@ void AnimationExporter::generateVideo()
     setStatus("Generating video...");
 
     QString ffmpegPath = getFFmpegPath();
-    QString inputPattern = m_tempDir + "/frame_%06d.png";
+    QString inputPattern = QDir::toNativeSeparators(m_tempDir + "/frame_%06d.png");
+
+    // ИСПРАВЛЕНО: Убеждаемся что выходной путь правильный
+    QString outputPath = QDir::toNativeSeparators(m_exportPath);
+
+    // ИСПРАВЛЕНО: Создаем папку для выходного файла если она не существует
+    QFileInfo outputInfo(outputPath);
+    QDir outputDir = outputInfo.dir();
+    if (!outputDir.exists()) {
+        outputDir.mkpath(".");
+        qDebug() << "Created output directory:" << outputDir.absolutePath();
+    }
 
     QStringList arguments;
     arguments << "-y" // Overwrite output file
@@ -322,9 +442,11 @@ void AnimationExporter::generateVideo()
               << "-pix_fmt" << "yuv420p"
               << "-preset" << "medium"
               << "-crf" << "18" // High quality
-              << m_exportPath;
+              << outputPath;
 
     qDebug() << "Starting FFmpeg with arguments:" << arguments;
+    qDebug() << "Input pattern:" << inputPattern;
+    qDebug() << "Output path:" << outputPath;
 
     m_ffmpegProcess->start(ffmpegPath, arguments);
 

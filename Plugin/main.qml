@@ -391,22 +391,4 @@ Window {
         return status
     }
 
-    function getKeyframeCount() {
-        if (!keyframeManager) return 0
-
-        try {
-            var keyframes = keyframeManager.getAllKeyframes()
-            console.log("Main: Getting keyframes:", keyframes, "Type:", typeof keyframes)
-
-            if (Array.isArray(keyframes)) {
-                return keyframes.length
-            } else if (typeof keyframes === 'object' && keyframes !== null) {
-                return Object.keys(keyframes).length
-            }
-        } catch (e) {
-            console.log("Main: Error getting keyframe count:", e)
-        }
-
-        return 0
-    }
 }

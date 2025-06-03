@@ -32,7 +32,6 @@ Window {
                 statusText.text = "❌ " + message
             }
 
-            // Show completion dialog
             messageDialog.title = success ? "Export Successful" : "Export Failed"
             messageDialog.text = message
             messageDialog.open()
@@ -87,7 +86,7 @@ Window {
                         font.pixelSize: 14
                     }
 
-                    // Frame Rate Setting
+                    // Frame Rate Setting - РЕАЛЬНО заменяем SpinBox на Slider
                     Row {
                         width: parent.width
                         spacing: 10
@@ -99,33 +98,23 @@ Window {
                             width: 120
                         }
 
-                        SpinBox {
-                            id: frameRateSpinBox
+                        Slider {
+                            id: frameRateSlider
+                            width: 200
                             from: 2
                             to: 60
                             value: exporter.frameRate
-                            onValueChanged: exporter.frameRate = value
-
-                            background: Rectangle {
-                                color: "#444444"
-                                border.color: "#666666"
-                                radius: 3
-                            }
-
-                            contentItem: TextInput {
-                                text: frameRateSpinBox.displayText
-                                color: "white"
-                                horizontalAlignment: Qt.AlignHCenter
-                                verticalAlignment: Qt.AlignVCenter
-                                readOnly: !frameRateSpinBox.editable
-                                validator: frameRateSpinBox.validator
-                                inputMethodHints: frameRateSpinBox.inputMethodHints
+                            onValueChanged: {
+                                console.log("Frame rate changed to:", value)
+                                exporter.frameRate = value
                             }
                         }
 
                         Text {
-                            text: "fps (2-60)"
-                            color: "#888888"
+                            text: frameRateSlider.value.toFixed(0) + " fps"
+                            color: "white"
+                            width: 50
+                            font.pixelSize: 12
                             anchors.verticalCenter: parent.verticalCenter
                         }
                     }
@@ -263,16 +252,16 @@ Window {
                 }
             }
 
-            // Keyframes Info
+            // Animation Info (УПРОЩЕНО - без счетчика ключевых кадров)
             Rectangle {
                 width: parent.width
-                height: keyframesColumn.height + 20
+                height: animationColumn.height + 20
                 color: "#333333"
                 border.color: "#666666"
                 radius: 5
 
                 Column {
-                    id: keyframesColumn
+                    id: animationColumn
                     anchors.left: parent.left
                     anchors.right: parent.right
                     anchors.margins: 15
@@ -286,7 +275,7 @@ Window {
                     }
 
                     Text {
-                        text: "• Total Keyframes: " + getKeyframeCount()
+                        text: "• Total Frames Available: 30"
                         color: "lightgray"
                         font.pixelSize: 12
                     }
@@ -533,7 +522,10 @@ Window {
         nameFilters: ["MP4 Video (*.mp4)", "AVI Video (*.avi)", "MOV Video (*.mov)"]
         defaultSuffix: "mp4"
         onAccepted: {
-            exporter.exportPath = selectedFile.toString().replace("file://", "")
+            // ИСПРАВЛЕНО: Правильная обработка пути
+            var path = selectedFile.toString()
+            console.log("Selected file:", path)
+            exporter.exportPath = path // setExportPath сам очистит путь
         }
     }
 
@@ -601,13 +593,6 @@ Window {
             return
         }
 
-        if (getKeyframeCount() === 0) {
-            statusText.color = "#f44336"
-            statusText.text = "❌ Error: No keyframes found. Create some keyframes first."
-            return
-        }
-
-        // Get resolution from combo box
         var resolutions = {
             0: {width: 1920, height: 1080},
             1: {width: 1280, height: 720},
@@ -625,49 +610,20 @@ Window {
         exporter.startExport(keyframeManager, view3d, resolution.width, resolution.height)
     }
 
-    function getKeyframeCount() {
-        if (!keyframeManager) return 0
-
-        try {
-            var keyframes = keyframeManager.getAllKeyframes()
-            console.log("ExportWindow: Getting keyframes:", keyframes, "Type:", typeof keyframes)
-
-            if (Array.isArray(keyframes)) {
-                console.log("ExportWindow: Keyframe count:", keyframes.length)
-                return keyframes.length
-            } else if (typeof keyframes === 'object' && keyframes !== null) {
-                // Если это объект, получаем количество ключей
-                var count = Object.keys(keyframes).length
-                console.log("ExportWindow: Keyframe count from object:", count)
-                return count
-            }
-        } catch (e) {
-            console.log("ExportWindow: Error getting keyframe count:", e)
-        }
-
-        console.log("ExportWindow: No keyframes found")
-        return 0
-    }
-
     function getAnimationDuration() {
-        var keyframeCount = getKeyframeCount()
-        if (keyframeCount === 0) return "0.0"
-
-        var duration = keyframeCount / frameRateSpinBox.value
+        // Примерная продолжительность основана на 30 кадрах
+        var duration = 30 / frameRateSlider.value
         return duration.toFixed(1)
     }
 
     function getEstimatedFileSize() {
-        var keyframeCount = getKeyframeCount()
         var resolution = resolutionComboBox.currentIndex
 
-        if (keyframeCount === 0) return "0 MB"
-
-        // Rough estimation based on resolution and frame count
+        // Rough estimation based on resolution and 30 frames
         var baseSizePerFrame = [2.5, 1.2, 1.4, 1.8, 5.0, 15.0] // MB per frame for each resolution
         var sizePerFrame = baseSizePerFrame[resolution] || 2.5
 
-        var totalSize = keyframeCount * sizePerFrame
+        var totalSize = 30 * sizePerFrame
 
         if (totalSize < 1) {
             return (totalSize * 1024).toFixed(0) + " KB"

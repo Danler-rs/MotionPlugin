@@ -66,6 +66,7 @@ private slots:
 private:
     void setupDirectories();
     void captureFrame(int frameIndex);
+    QQuickItem* findTimelineItem(QQuickItem* parent);
     void loadKeyframe(int frameIndex);
     void generateVideo();
     void cleanup();
