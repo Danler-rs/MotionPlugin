@@ -19,9 +19,11 @@ CONFIG(debug, debug|release) {
 
 
 SOURCES += \
+    animationexporter.cpp \
     motionplugin.cpp
 
 HEADERS += \
+    animationexporter.h \
     motionplugin.h \
     ../common/pluginInterface.h
 
@@ -30,6 +32,7 @@ DISTFILES += Plugin.json \
     BoneManipulator.qml \
     CameraHelper.qml \
     ControlPanelUI.qml \
+    ExportWindow.qml \
     GridManager.qml \
     KeyFrameManager.qml \
     SkeletonAnalyzer.qml \

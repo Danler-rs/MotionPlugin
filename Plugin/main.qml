@@ -8,6 +8,8 @@ import QtQuick3D.Helpers
 import QtQuick3D.AssetUtils
 import Qt.labs.platform
 import QtCore
+import MotionPlugin 1.0
+import MotionPlugin 1.0
 
 Window {
     id: windowRoot
@@ -28,6 +30,12 @@ Window {
 
     BoneControlWindow {
         id: boneControlWindow
+    }
+
+    ExportWindow {
+        id: exportWindow
+        keyframeManager: keyframeManager
+        view3d: view3D
     }
 
     GridManager {
@@ -93,6 +101,7 @@ Window {
             var keyframesData = keyframeManager.exportKeyframes()
             console.log("✅ Keyframes exported to console")
         }
+        onExportAnimationRequested: exportWindow.visible = !exportWindow.visible
     }
 
     View3D {
@@ -340,7 +349,7 @@ Window {
             }
 
             Text {
-                text: "Frame: " + (timeline.currentFrame + 1) + "/30 | Keyframes: " + timeline.getKeyframes().length
+                text: "Frame: " + (timeline.currentFrame + 1) + "/30 | Keyframes: " + getKeyframeCount()
                 color: "#888888"
                 font.pixelSize: 10
             }
@@ -350,6 +359,13 @@ Window {
                 color: boneControlWindow.visible ? "#4CAF50" : "#888888"
                 font.pixelSize: 10
                 font.bold: true
+            }
+
+            Text {
+                text: exportWindow.exporter.isExporting ? "🎬 Exporting..." : "🎬 Export: Ready"
+                color: exportWindow.exporter.isExporting ? "#FF9800" : "#888888"
+                font.pixelSize: 10
+                font.bold: exportWindow.exporter.isExporting
             }
         }
     }
@@ -373,5 +389,24 @@ Window {
         }
 
         return status
+    }
+
+    function getKeyframeCount() {
+        if (!keyframeManager) return 0
+
+        try {
+            var keyframes = keyframeManager.getAllKeyframes()
+            console.log("Main: Getting keyframes:", keyframes, "Type:", typeof keyframes)
+
+            if (Array.isArray(keyframes)) {
+                return keyframes.length
+            } else if (typeof keyframes === 'object' && keyframes !== null) {
+                return Object.keys(keyframes).length
+            }
+        } catch (e) {
+            console.log("Main: Error getting keyframe count:", e)
+        }
+
+        return 0
     }
 }
